@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serpent Sanctuary OS | The Liana Trust</title>
+    <title>Sanctuary OS | The Liana Trust</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -105,14 +105,14 @@
 <body class="bg-beige-cool font-rubik text-text-dark min-h-screen">
     <div id="app">
         <!-- OS Header -->
-        <header class="bg-beige-warm border-b-2 border-polonium p-4 sticky top-0 z-40">
+        <header class="bg-beige-warm p-4 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="w-8 h-8 bg-laboratory rounded-lg flex items-center justify-center">
                         <i class="fas fa-leaf text-beige-warm text-sm"></i>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-text-dark uppercase tracking-wide">SERPENT SANCTUARY OS</h1>
+                        <h1 class="text-lg font-bold text-text-dark uppercase tracking-wide">SANCTUARY OS</h1>
                         <p class="text-xs text-text-mid uppercase tracking-wider">The Liana Trust Research Station</p>
                     </div>
                 </div>
@@ -121,10 +121,14 @@
                     <!-- System Status -->
                     <div class="hidden sm:flex items-center space-x-3 text-xs">
                         <div class="flex items-center space-x-1">
+                            <div class="w-2 h-2 bg-polonium rounded-full live-pulse"></div>
+                            <span class="text-text-mid">{{ totalSnakes }} RESIDENTS</span>
+                        </div>
+                        <div class="text-text-light">|</div>
+                        <div class="flex items-center space-x-1">
                             <div class="w-2 h-2 bg-laboratory rounded-full live-pulse"></div>
                             <span class="text-text-mid">{{ activeFeeds }} FEEDS</span>
                         </div>
-                        <div class="text-text-light">|</div>
                         <span class="text-text-mid">{{ currentTime }}</span>
                     </div>
                     
@@ -147,7 +151,7 @@
                             <button @click="addNewSnake" class="w-full text-left px-4 py-2 text-sm text-laboratory hover:bg-beige-warm flex items-center">
                                 <i class="fas fa-plus mr-2"></i>Add New Resident
                             </button>
-                            <button class="w-full text-left px-4 py-2 text-sm text-uranium hover:bg-beige-warm flex items-center">
+                            <button class="hidden w-full text-left px-4 py-2 text-sm text-uranium hover:bg-beige-warm flex items-center">
                                 <i class="fas fa-download mr-2"></i>Export Data
                             </button>
                         </div>
@@ -157,7 +161,7 @@
         </header>
 
         <!-- Stats Overview -->
-        <section class="px-4 py-6 max-w-7xl mx-auto">
+        <section class="px-4 py-6 max-w-7xl mx-auto hidden">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                 <div class="bg-white rounded-xl border border-polonium p-4 text-center subtle-shadow">
                     <div class="text-2xl font-bold text-text-dark">{{ totalSnakes }}</div>
@@ -190,36 +194,33 @@
         </div>
 
         <!-- Snake Grid -->
-        <main class="px-4 pb-8 max-w-7xl mx-auto">
+        <main class="px-4 pb-8 max-w-7xl pt-8 mx-auto">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div 
                     v-for="snake in snakes" 
                     :key="snake.id"
-                    class="aspect-square bg-white rounded-xl overflow-hidden relative group cursor-pointer border border-polonium hover:border-radium/50 transition-all duration-300 subtle-shadow hover:shadow-lg"
+                    class="aspect-[12/9] bg-white rounded-xl overflow-hidden relative group cursor-pointer border border-polonium hover:border-radium/50 transition-all duration-300 subtle-shadow hover:shadow-lg"
                     @click="openSnakeProfile(snake)"
                 >
                     <!-- Background Feed/Image -->
                     <div class="absolute inset-0">
-                        <div v-if="snake.hasCamera" class="h-full relative">
+                        <div v-if="snake.hasCamera" class="camera-feed h-full relative">
+                            <video src="videos/aragon.mp4" loop="" autoplay="" playsinline="" muted="" class="object-cover w-full h-full"></video>
                             <!-- Live indicator -->
                             <div class="absolute top-3 right-3 z-20">
                                 <div class="w-3 h-3 bg-radium rounded-full live-pulse"></div>
                             </div>
                         </div>
                         <div v-else class="static-image h-full flex items-center justify-center">
-                            <div class="text-center text-text-light">
-                                <i class="fas fa-image text-4xl mb-2 opacity-40"></i>
-                                <p class="text-sm opacity-60 font-medium">PHOTO</p>
-                            </div>
+                            <img src="images/rat-snake.jpeg" class="cover w-full h-full" />
                         </div>
                     </div>
                     
                     <!-- Glass overlay with minimal info -->
-                     <video src="videos/aragon.mp4" loop="" autoplay="" playsinline="" class="object-cover w-full h-full"></video>
-                    <div class="absolute inset-0 bg-gradient-to-t from-text-dark/80">
+                    <div class="absolute inset-0 bg-gradient-to-t from-text-dark/80 via-transparent to-transparent">
                         <!-- Environmental data - top corner -->
-                        <div class="absolute top-3 left-3 rounded-lg px-3 py-1">
-                            <div class="flex items-center space-x-3 text-xs text-white">
+                        <div class="absolute top-3 left-3 glass-dark rounded-lg px-3 py-1">
+                            <div class="flex items-center space-x-2 text-xs text-white">
                                 <span class="flex items-center">
                                     <i class="fas fa-thermometer-half mr-1 text-radium"></i>
                                     {{ snake.temperature }}°C
@@ -227,6 +228,10 @@
                                 <span class="flex items-center">
                                     <i class="fas fa-tint mr-1 text-uranium"></i>
                                     {{ snake.humidity }}%
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-sun mr-1 text-yellow-400"></i>
+                                    {{ snake.uvIndex }}
                                 </span>
                             </div>
                         </div>
@@ -245,7 +250,7 @@
 
         <!-- Snake Profile Modal -->
         <div v-if="selectedSnake" class="fixed inset-0 bg-text-dark/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4" @click="closeSnakeProfile">
-            <div class="bg-beige-warm border-2 border-polonium rounded-t-xl sm:rounded-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto slide-up" @click.stop>
+            <div class="bg-beige-warm rounded-t-xl sm:rounded-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto slide-up" @click.stop>
                 <!-- Modal Header -->
                 <div class="bg-laboratory p-6 sm:rounded-t-xl">
                     <div class="flex justify-between items-start">
@@ -253,10 +258,10 @@
                             <h2 v-if="!editMode" class="text-2xl font-bold text-beige-warm">{{ selectedSnake.name }}</h2>
                             <input v-else v-model="editData.name" class="text-2xl font-bold text-beige-warm bg-transparent border-b-2 border-beige-warm w-full edit-input">
                             
-                            <p v-if="!editMode" class="text-laboratory-200 text-sm">{{ selectedSnake.nickname }}</p>
+                            <p v-if="!editMode" class="text-white text-sm">{{ selectedSnake.nickname }}</p>
                             <input v-else v-model="editData.nickname" class="text-laboratory-200 text-sm bg-transparent border-b border-beige-warm/50 w-full mt-1 edit-input">
                             
-                            <p v-if="!editMode" class="text-laboratory-300 text-xs mt-1 italic">{{ selectedSnake.species }}</p>
+                            <p v-if="!editMode" class="text-white text-xs mt-1 italic">{{ selectedSnake.species }}</p>
                             <input v-else v-model="editData.species" class="text-laboratory-300 text-xs mt-1 italic bg-transparent border-b border-beige-warm/30 w-full edit-input">
                         </div>
                         
@@ -282,12 +287,27 @@
                             Live Camera Feed
                         </h3>
                         <div class="aspect-video rounded-lg border-2 border-polonium relative overflow-hidden">
-                            <div class="absolute inset-0 flex items-center justify-center">
+                            <video
+                                autoplay 
+                                muted 
+                                loop 
+                                class="w-full h-full object-cover"
+                            >
+                                <source src="videos/aragon.mp4" type="video/mp4">
+                                <div class="absolute inset-0 camera-feed flex items-center justify-center">
+                                    <div class="text-center text-text-mid">
+                                        <i class="fas fa-video text-3xl mb-2 opacity-30"></i>
+                                        <p class="text-sm opacity-60 font-medium">Video not supported</p>
+                                    </div>
+                                </div>
+                            </video>
+                            <div v-else class="aspect-video camera-feed flex items-center justify-center">
                                 <div class="text-center text-text-mid">
                                     <i class="fas fa-video text-3xl mb-2 opacity-30"></i>
                                     <p class="text-sm opacity-60 font-medium">{{ selectedSnake.name }}'s Habitat</p>
                                 </div>
                             </div>
+                            
                             <div class="absolute top-4 right-4">
                                 <div class="w-3 h-3 bg-radium rounded-full live-pulse"></div>
                             </div>
