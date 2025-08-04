@@ -74,7 +74,7 @@ Sanctuary OS provides a **unified, intelligent monitoring platform** that combin
 - Basic environmental monitoring
 - Suitable for: Educational animals, non-critical species
 
-### **Premium Enclosures** 
+### **Large Enclosures** 
 - **10 sensor collection points** per habitat
 - Comprehensive environmental mapping
 - Suitable for: Venomous species, breeding programs, research subjects
@@ -117,7 +117,7 @@ Sanctuary OS provides a **unified, intelligent monitoring platform** that combin
 
 ### **Facility Requirements**
 - [ ] Total number of enclosures requiring monitoring
-- [ ] Number of standard vs. premium monitoring setups needed
+- [ ] Number of standard vs. large monitoring setups needed
 - [ ] Outdoor enclosure requirements
 - [ ] Existing WiFi infrastructure capabilities
 - [ ] Power availability at sensor locations
