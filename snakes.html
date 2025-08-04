@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serpent Sanctuary OS | The Liana Trust</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://kit.fontawesome.com/e0c6d65845.js" crossorigin="anonymous"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'radium': '#FF6B35',
+                        'laboratory': '#2A5F41',
+                        'uranium': '#8B9A46',
+                        'polonium': '#D4A574',
+                        'beige-warm': '#F5F0E8',
+                        'beige-cool': '#E8E2D4',
+                        'text-dark': '#2D2D2D',
+                        'text-mid': '#6B6B6B',
+                        'text-light': '#9B9B9B'
+                    },
+                    fontFamily: {
+                        'rubik': ['Rubik', 'system-ui', 'sans-serif']
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Rubik', system-ui, sans-serif;
+        }
+        
+        .glass-overlay {
+            backdrop-filter: blur(8px);
+            background: rgba(245, 240, 232, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .glass-dark {
+            backdrop-filter: blur(8px);
+            background: rgba(45, 45, 45, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .camera-feed {
+            background: linear-gradient(45deg, #E8E2D4 25%, transparent 25%),
+                        linear-gradient(-45deg, #E8E2D4 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #E8E2D4 75%),
+                        linear-gradient(-45deg, transparent 75%, #E8E2D4 75%);
+            background-size: 12px 12px;
+            background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+        }
+        
+        .static-image {
+            background: linear-gradient(135deg, #F5F0E8 0%, #E8E2D4 100%);
+        }
+        
+        .live-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .subtle-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .edit-mode {
+            border: 2px dashed #FF6B35 !important;
+            background: rgba(255, 107, 53, 0.05) !important;
+        }
+        
+        .edit-input {
+            background: transparent;
+            border-bottom: 1px solid #FF6B35;
+            outline: none;
+            color: inherit;
+        }
+        
+        .edit-input:focus {
+            border-bottom-color: #2A5F41;
+        }
+    </style>
+</head>
+
+<body class="bg-beige-cool font-rubik text-text-dark min-h-screen">
+    <div id="app">
+        <!-- OS Header -->
+        <header class="bg-beige-warm border-b-2 border-polonium p-4 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-8 h-8 bg-laboratory rounded-lg flex items-center justify-center">
+                        <i class="fas fa-leaf text-beige-warm text-sm"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-text-dark uppercase tracking-wide">SERPENT SANCTUARY OS</h1>
+                        <p class="text-xs text-text-mid uppercase tracking-wider">The Liana Trust Research Station</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- System Status -->
+                    <div class="hidden sm:flex items-center space-x-3 text-xs">
+                        <div class="flex items-center space-x-1">
+                            <div class="w-2 h-2 bg-laboratory rounded-full live-pulse"></div>
+                            <span class="text-text-mid">{{ activeFeeds }} FEEDS</span>
+                        </div>
+                        <div class="text-text-light">|</div>
+                        <span class="text-text-mid">{{ currentTime }}</span>
+                    </div>
+                    
+                    <!-- Admin Dropdown -->
+                    <div class="relative">
+                        <button @click="toggleAdminDropdown" 
+                                :class="['p-2 rounded-lg transition-colors', adminDropdownOpen ? 'bg-radium text-white' : 'hover:bg-polonium/30 text-text-mid']">
+                            <i class="fas fa-cog text-sm"></i>
+                        </button>
+                        
+                        <div v-if="adminDropdownOpen" class="absolute right-0 top-12 bg-white rounded-lg shadow-lg py-2 w-48 z-50 border border-polonium">
+                            <button @click="toggleAdminMode" :class="['w-full text-left px-4 py-2 text-sm hover:bg-beige-warm flex items-center', adminMode ? 'text-radium font-medium' : 'text-text-dark']">
+                                <i class="fas fa-edit mr-2"></i>
+                                {{ adminMode ? 'Exit Admin Mode' : 'Enter Admin Mode' }}
+                            </button>
+                            <button @click="openSettingsModal" class="w-full text-left px-4 py-2 text-sm text-text-dark hover:bg-beige-warm flex items-center">
+                                <i class="fas fa-sliders-h mr-2"></i>Settings
+                            </button>
+                            <hr class="my-2 border-beige-cool">
+                            <button @click="addNewSnake" class="w-full text-left px-4 py-2 text-sm text-laboratory hover:bg-beige-warm flex items-center">
+                                <i class="fas fa-plus mr-2"></i>Add New Resident
+                            </button>
+                            <button class="w-full text-left px-4 py-2 text-sm text-uranium hover:bg-beige-warm flex items-center">
+                                <i class="fas fa-download mr-2"></i>Export Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Overview -->
+        <section class="px-4 py-6 max-w-7xl mx-auto">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                <div class="bg-white rounded-xl border border-polonium p-4 text-center subtle-shadow">
+                    <div class="text-2xl font-bold text-text-dark">{{ totalSnakes }}</div>
+                    <div class="text-xs text-text-mid uppercase tracking-wide">Residents</div>
+                </div>
+                <div class="bg-laboratory/10 rounded-xl border border-laboratory/20 p-4 text-center">
+                    <div class="text-2xl font-bold text-laboratory">{{ averageTemp }}°</div>
+                    <div class="text-xs text-text-mid uppercase tracking-wide">Avg Temp</div>
+                </div>
+                <div class="bg-uranium/10 rounded-xl border border-uranium/20 p-4 text-center">
+                    <div class="text-2xl font-bold text-uranium">{{ averageHumidity }}%</div>
+                    <div class="text-xs text-text-mid uppercase tracking-wide">Humidity</div>
+                </div>
+                <div class="bg-radium/10 rounded-xl border border-radium/20 p-4 text-center">
+                    <div class="text-2xl font-bold text-radium">{{ activeFeeds }}</div>
+                    <div class="text-xs text-text-mid uppercase tracking-wide">Live Feeds</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Banner -->
+        <div v-if="adminMode" class="px-4 max-w-7xl mx-auto mb-6">
+            <div class="bg-radium/10 border border-radium/30 rounded-xl p-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-user-shield text-radium"></i>
+                    <span class="font-medium text-radium uppercase tracking-wide">Admin Mode Active</span>
+                </div>
+                <span class="text-xs text-text-mid">Click any snake card to edit details</span>
+            </div>
+        </div>
+
+        <!-- Snake Grid -->
+        <main class="px-4 pb-8 max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div 
+                    v-for="snake in snakes" 
+                    :key="snake.id"
+                    class="aspect-square bg-white rounded-xl overflow-hidden relative group cursor-pointer border border-polonium hover:border-radium/50 transition-all duration-300 subtle-shadow hover:shadow-lg"
+                    @click="openSnakeProfile(snake)"
+                >
+                    <!-- Background Feed/Image -->
+                    <div class="absolute inset-0">
+                        <div v-if="snake.hasCamera" class="h-full relative">
+                            <!-- Live indicator -->
+                            <div class="absolute top-3 right-3 z-20">
+                                <div class="w-3 h-3 bg-radium rounded-full live-pulse"></div>
+                            </div>
+                        </div>
+                        <div v-else class="static-image h-full flex items-center justify-center">
+                            <div class="text-center text-text-light">
+                                <i class="fas fa-image text-4xl mb-2 opacity-40"></i>
+                                <p class="text-sm opacity-60 font-medium">PHOTO</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Glass overlay with minimal info -->
+                     <video src="videos/aragon.mp4" loop="" autoplay="" playsinline="" class="object-cover w-full h-full"></video>
+                    <div class="absolute inset-0 bg-gradient-to-t from-text-dark/80">
+                        <!-- Environmental data - top corner -->
+                        <div class="absolute top-3 left-3 rounded-lg px-3 py-1">
+                            <div class="flex items-center space-x-3 text-xs text-white">
+                                <span class="flex items-center">
+                                    <i class="fas fa-thermometer-half mr-1 text-radium"></i>
+                                    {{ snake.temperature }}°C
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-tint mr-1 text-uranium"></i>
+                                    {{ snake.humidity }}%
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Snake info - bottom -->
+                        <div class="absolute bottom-0 left-0 right-0 p-4">
+                            <div class="glass-dark rounded-lg p-3">
+                                <h3 class="text-lg font-bold text-white mb-1">{{ snake.name }}</h3>
+                                <p class="text-sm text-beige-cool">{{ snake.nickname }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Snake Profile Modal -->
+        <div v-if="selectedSnake" class="fixed inset-0 bg-text-dark/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4" @click="closeSnakeProfile">
+            <div class="bg-beige-warm border-2 border-polonium rounded-t-xl sm:rounded-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto slide-up" @click.stop>
+                <!-- Modal Header -->
+                <div class="bg-laboratory p-6 sm:rounded-t-xl">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <h2 v-if="!editMode" class="text-2xl font-bold text-beige-warm">{{ selectedSnake.name }}</h2>
+                            <input v-else v-model="editData.name" class="text-2xl font-bold text-beige-warm bg-transparent border-b-2 border-beige-warm w-full edit-input">
+                            
+                            <p v-if="!editMode" class="text-laboratory-200 text-sm">{{ selectedSnake.nickname }}</p>
+                            <input v-else v-model="editData.nickname" class="text-laboratory-200 text-sm bg-transparent border-b border-beige-warm/50 w-full mt-1 edit-input">
+                            
+                            <p v-if="!editMode" class="text-laboratory-300 text-xs mt-1 italic">{{ selectedSnake.species }}</p>
+                            <input v-else v-model="editData.species" class="text-laboratory-300 text-xs mt-1 italic bg-transparent border-b border-beige-warm/30 w-full edit-input">
+                        </div>
+                        
+                        <div class="flex items-center space-x-2 ml-4">
+                            <button v-if="adminMode" @click="toggleEditMode" 
+                                    :class="['p-2 rounded-lg transition-colors', editMode ? 'bg-radium text-white' : 'hover:bg-laboratory-600 text-beige-warm']">
+                                <i :class="editMode ? 'fas fa-save' : 'fas fa-edit'" class="text-sm"></i>
+                            </button>
+                            
+                            <button @click="closeSnakeProfile" class="text-beige-warm hover:text-laboratory-200 transition-colors">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="p-6 space-y-6">
+                    <!-- Camera Feed -->
+                    <div v-if="selectedSnake.hasCamera">
+                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
+                            <i class="fas fa-video mr-2 text-laboratory"></i>
+                            Live Camera Feed
+                        </h3>
+                        <div class="aspect-video rounded-lg border-2 border-polonium relative overflow-hidden">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="text-center text-text-mid">
+                                    <i class="fas fa-video text-3xl mb-2 opacity-30"></i>
+                                    <p class="text-sm opacity-60 font-medium">{{ selectedSnake.name }}'s Habitat</p>
+                                </div>
+                            </div>
+                            <div class="absolute top-4 right-4">
+                                <div class="w-3 h-3 bg-radium rounded-full live-pulse"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- About Section -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
+                            <i class="fas fa-book-open mr-2 text-laboratory"></i>
+                            Research Notes
+                        </h3>
+                        <div class="bg-white rounded-lg border border-polonium p-4">
+                            <p v-if="!editMode" class="text-sm text-text-dark leading-relaxed">{{ selectedSnake.story }}</p>
+                            <textarea v-else v-model="editData.story" class="w-full text-sm text-text-dark leading-relaxed bg-transparent border border-polonium rounded p-2 resize-none" rows="4"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Environmental Conditions -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
+                            <i class="fas fa-thermometer-quarter mr-2 text-laboratory"></i>
+                            Environmental Parameters
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Temperature -->
+                            <div class="bg-white rounded-lg border border-polonium p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-thermometer-half mr-2 text-radium"></i>
+                                        <span class="font-bold text-text-dark uppercase tracking-wide text-sm">Temperature</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span v-if="!editMode" class="text-lg font-bold text-radium">{{ selectedSnake.temperature }}°C</span>
+                                        <input v-else v-model="editData.temperature" type="number" step="0.1" class="text-lg font-bold text-radium w-16 text-right edit-input">
+                                    </div>
+                                </div>
+                                
+                                <div class="relative h-2 bg-beige-cool rounded-full overflow-hidden">
+                                    <div class="absolute h-full bg-laboratory/30 rounded-full" 
+                                         :style="`left: ${(selectedSnake.idealConditions.tempMin/40)*100}%; width: ${((selectedSnake.idealConditions.tempMax - selectedSnake.idealConditions.tempMin)/40)*100}%`">
+                                    </div>
+                                    <div class="absolute top-0 h-full w-1 bg-radium rounded-full" 
+                                         :style="`left: ${(selectedSnake.temperature/40)*100}%`">
+                                    </div>
+                                </div>
+                                
+                                <div class="text-xs text-text-mid mt-2 flex justify-between">
+                                    <span>Optimal:</span>
+                                    <span v-if="!editMode">{{ selectedSnake.idealConditions.tempMin }}-{{ selectedSnake.idealConditions.tempMax }}°C</span>
+                                    <div v-else class="flex items-center space-x-1">
+                                        <input v-model="editData.idealConditions.tempMin" type="number" class="w-8 edit-input text-xs">
+                                        <span>-</span>
+                                        <input v-model="editData.idealConditions.tempMax" type="number" class="w-8 edit-input text-xs">
+                                        <span>°C</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Humidity -->
+                            <div class="bg-white rounded-lg border border-polonium p-4">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-tint mr-2 text-uranium"></i>
+                                        <span class="font-bold text-text-dark uppercase tracking-wide text-sm">Humidity</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span v-if="!editMode" class="text-lg font-bold text-uranium">{{ selectedSnake.humidity }}%</span>
+                                        <input v-else v-model="editData.humidity" type="number" class="text-lg font-bold text-uranium w-16 text-right edit-input">
+                                    </div>
+                                </div>
+                                
+                                <div class="relative h-2 bg-beige-cool rounded-full overflow-hidden">
+                                    <div class="absolute h-full bg-uranium/30 rounded-full" 
+                                         :style="`left: ${selectedSnake.idealConditions.humidityMin}%; width: ${selectedSnake.idealConditions.humidityMax - selectedSnake.idealConditions.humidityMin}%`">
+                                    </div>
+                                    <div class="absolute top-0 h-full w-1 bg-uranium rounded-full" 
+                                         :style="`left: ${selectedSnake.humidity}%`">
+                                    </div>
+                                </div>
+                                
+                                <div class="text-xs text-text-mid mt-2 flex justify-between">
+                                    <span>Optimal:</span>
+                                    <span v-if="!editMode">{{ selectedSnake.idealConditions.humidityMin }}-{{ selectedSnake.idealConditions.humidityMax }}%</span>
+                                    <div v-else class="flex items-center space-x-1">
+                                        <input v-model="editData.idealConditions.humidityMin" type="number" class="w-8 edit-input text-xs">
+                                        <span>-</span>
+                                        <input v-model="editData.idealConditions.humidityMax" type="number" class="w-8 edit-input text-xs">
+                                        <span>%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Care Schedule -->
+                    <div>
+                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
+                            <i class="fas fa-calendar-alt mr-2 text-laboratory"></i>
+                            Care Protocol
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="bg-white rounded-lg border border-polonium p-4 text-center">
+                                <i class="fas fa-utensils text-radium text-lg mb-2"></i>
+                                <div class="text-xs text-text-mid uppercase tracking-wide mb-1">Last Meal</div>
+                                <div v-if="!editMode" class="text-sm font-bold text-text-dark">{{ selectedSnake.lastMeal }}</div>
+                                <input v-else v-model="editData.lastMeal" class="text-sm font-bold text-text-dark w-full text-center edit-input">
+                            </div>
+                            
+                            <div class="bg-white rounded-lg border border-polonium p-4 text-center">
+                                <i class="fas fa-broom text-uranium text-lg mb-2"></i>
+                                <div class="text-xs text-text-mid uppercase tracking-wide mb-1">Cleaned</div>
+                                <div v-if="!editMode" class="text-sm font-bold text-text-dark">{{ selectedSnake.lastCleaning }}</div>
+                                <input v-else v-model="editData.lastCleaning" class="text-sm font-bold text-text-dark w-full text-center edit-input">
+                            </div>
+                            
+                            <div class="bg-white rounded-lg border border-polonium p-4 text-center">
+                                <i class="fas fa-stethoscope text-laboratory text-lg mb-2"></i>
+                                <div class="text-xs text-text-mid uppercase tracking-wide mb-1">Check-up</div>
+                                <div v-if="!editMode" class="text-sm font-bold text-text-dark">{{ selectedSnake.nextCheckup }}</div>
+                                <input v-else v-model="editData.nextCheckup" class="text-sm font-bold text-text-dark w-full text-center edit-input">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Details (Edit Mode) -->
+                    <div v-if="editMode">
+                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
+                            <i class="fas fa-edit mr-2 text-radium"></i>
+                            Additional Details
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-white rounded-lg border border-polonium p-4">
+                                <label class="text-xs text-text-mid uppercase tracking-wide block mb-2">Age</label>
+                                <input v-model="editData.age" class="w-full edit-input text-sm font-medium text-text-dark">
+                            </div>
+                            
+                            <div class="bg-white rounded-lg border border-polonium p-4">
+                                <label class="text-xs text-text-mid uppercase tracking-wide block mb-2">Has Camera</label>
+                                <select v-model="editData.hasCamera" class="w-full p-2 border border-polonium rounded text-sm">
+                                    <option :value="true">Yes</option>
+                                    <option :value="false">No</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg border border-polonium p-4 mt-4">
+                            <label class="text-xs text-text-mid uppercase tracking-wide block mb-2">Research Notes</label>
+                            <textarea v-model="editData.researchNotes" class="w-full p-2 border border-polonium rounded text-sm resize-none" rows="3" placeholder="Internal research observations..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Modal -->
+        <div v-if="showSettingsModal" class="fixed inset-0 bg-text-dark/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="closeSettingsModal">
+            <div class="bg-white rounded-xl border-2 border-polonium max-w-md w-full p-6" @click.stop>
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-text-dark uppercase tracking-wide">System Settings</h3>
+                    <button @click="closeSettingsModal" class="text-text-light hover:text-text-dark">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="text-sm font-bold text-text-dark uppercase tracking-wide block mb-2">Data Update Frequency</label>
+                        <select v-model="settings.updateFrequency" class="w-full p-3 border border-polonium rounded-lg">
+                            <option value="5">Every 5 seconds</option>
+                            <option value="10">Every 10 seconds</option>
+                            <option value="30">Every 30 seconds</option>
+                            <option value="60">Every minute</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="text-sm font-bold text-text-dark uppercase tracking-wide block mb-2">Alert Thresholds</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-text-mid block mb-1">Temperature (°C)</label>
+                                <input v-model="settings.tempThreshold" type="number" class="w-full p-2 border border-polonium rounded text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs text-text-mid block mb-1">Humidity (%)</label>
+                                <input v-model="settings.humidityThreshold" type="number" class="w-full p-2 border border-polonium rounded text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <button @click="closeSettingsModal" class="flex-1 px-4 py-3 border border-polonium text-text-dark rounded-lg hover:bg-beige-warm transition-colors uppercase tracking-wide text-sm font-medium">
+                            Cancel
+                        </button>
+                        <button @click="saveSettings" class="flex-1 px-4 py-3 bg-laboratory text-beige-warm rounded-lg hover:bg-laboratory/90 transition-colors uppercase tracking-wide text-sm font-bold">
+                            Save
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    currentTime: '',
+                    selectedSnake: null,
+                    adminMode: false,
+                    adminDropdownOpen: false,
+                    editMode: false,
+                    editData: {},
+                    showSettingsModal: false,
+                    settings: {
+                        updateFrequency: 10,
+                        tempThreshold: 2,
+                        humidityThreshold: 10
+                    },
+                    snakes: [
+                        {
+                            id: 'aragon',
+                            name: 'Aragon',
+                            nickname: 'The Gentle Giant',
+                            species: 'Ophiophagus hannah (King Cobra)',
+                            hasCamera: true,
+                            temperature: 28.5,
+                            humidity: 75,
+                            age: '3-4 years',
+                            lastMeal: '3 days ago',
+                            story: 'Aragon came to us as part of our venom research program with IISc. Despite being one of the world\'s most venomous snakes, he has adapted well to his environment and plays a crucial role in developing life-saving antivenom.',
+                            idealConditions: { tempMin: 26, tempMax: 32, humidityMin: 70, humidityMax: 80 },
+                            lastCleaning: '2 days ago',
+                            nextCheckup: 'Next week',
+                            researchNotes: 'Excellent temperament during venom extraction. Shows recognition of regular handlers.'
+                        },
+                        {
+                            id: 'priya',
+                            name: 'Priya',
+                            nickname: 'The Survivor',
+                            species: 'Naja naja (Indian Cobra)',
+                            hasCamera: true,
+                            temperature: 24.2,
+                            humidity: 82,
+                            age: '2-3 years',
+                            lastMeal: '5 days ago',
+                            story: 'Priya was rescued from a human-snake conflict situation. She has shown remarkable resilience and her case study helps us develop better conflict resolution protocols.',
+                            idealConditions: { tempMin: 25, tempMax: 30, humidityMin: 60, humidityMax: 75 },
+                            lastCleaning: 'Yesterday',
+                            nextCheckup: 'This weekend',
+                            researchNotes: 'Recovery progressing well. Stress indicators decreasing over time.'
+                        },
+                        {
+                            id: 'ravi',
+                            name: 'Ravi',
+                            nickname: 'The Ambassador',
+                            species: 'Ptyas mucosa (Oriental Rat Snake)',
+                            hasCamera: false,
+                            temperature: 27.1,
+                            humidity: 65,
+                            age: '1-2 years',
+                            lastMeal: '4 days ago',
+                            story: 'Ravi serves as our primary education ambassador, visiting schools and community centers. His calm demeanor makes him perfect for public outreach and education programs.',
+                            idealConditions: { tempMin: 24, tempMax: 29, humidityMin: 55, humidityMax: 70 },
+                            lastCleaning: '3 days ago',
+                            nextCheckup: 'Next week',
+                            researchNotes: 'Excellent educational ambassador. Well-adapted to transport and handling.'
+                        },
+                        {
+                            id: 'kala',
+                            name: 'Kala',
+                            nickname: 'The Mysterious',
+                            species: 'Bungarus caeruleus (Common Krait)',
+                            hasCamera: true,
+                            temperature: 22.8,
+                            humidity: 45,
+                            age: 'Unknown',
+                            lastMeal: '7 days ago',
+                            story: 'Kala is our newest resident, still adjusting to her environment. As a nocturnal species, she requires specialized monitoring to ensure proper adaptation.',
+                            idealConditions: { tempMin: 24, tempMax: 28, humidityMin: 60, humidityMax: 75 },
+                            lastCleaning: 'Yesterday',
+                            nextCheckup: 'Tomorrow',
+                            researchNotes: 'Nocturnal behavior patterns being documented. Requires continued monitoring.'
+                        },
+                        {
+                            id: 'lila-maya',
+                            name: 'Lila & Maya',
+                            nickname: 'The Duo',
+                            species: 'Boiga forsteni (Forsten\'s Cat Snake)',
+                            hasCamera: false,
+                            temperature: 26.3,
+                            humidity: 78,
+                            age: '2-3 years',
+                            lastMeal: '2 days ago',
+                            story: 'This bonded pair is part of our conservation breeding program. Their arboreal habitat setup serves as a model for other institutions working with similar species.',
+                            idealConditions: { tempMin: 24, tempMax: 28, humidityMin: 75, humidityMax: 85 },
+                            lastCleaning: 'Yesterday',
+                            nextCheckup: 'This week',
+                            researchNotes: 'Breeding pair showing natural behaviors. Habitat enrichment successful.'
+                        },
+                        {
+                            id: 'vikram',
+                            name: 'Vikram',
+                            nickname: 'The Veteran',
+                            species: 'Daboia russelii (Russell\'s Viper)',
+                            hasCamera: true,
+                            temperature: 29.1,
+                            humidity: 55,
+                            age: '4-5 years',
+                            lastMeal: '6 days ago',
+                            story: 'Vikram is one of our senior residents contributing to anti-venom research. His extensive participation in research programs has contributed significantly to medical advances.',
+                            idealConditions: { tempMin: 27, tempMax: 33, humidityMin: 50, humidityMax: 65 },
+                            lastCleaning: '2 days ago',
+                            nextCheckup: 'This week',
+                            researchNotes: 'Consistent contributor to venom research. Stable health indicators over 2+ years.'
+                        }
+                    ]
+                }
+            },
+            computed: {
+                totalSnakes() {
+                    return this.snakes.length;
+                },
+                activeFeeds() {
+                    return this.snakes.filter(s => s.hasCamera).length;
+                },
+                averageTemp() {
+                    const total = this.snakes.reduce((sum, s) => sum + s.temperature, 0);
+                    return Math.round(total / this.snakes.length * 10) / 10;
+                },
+                averageHumidity() {
+                    const total = this.snakes.reduce((sum, s) => sum + s.humidity, 0);
+                    return Math.round(total / this.snakes.length);
+                }
+            },
+            methods: {
+                updateTime() {
+                    const now = new Date();
+                    this.currentTime = now.toLocaleTimeString('en-IN', { 
+                        timeZone: 'Asia/Kolkata',
+                        hour12: false,
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                },
+                toggleAdminDropdown() {
+                    this.adminDropdownOpen = !this.adminDropdownOpen;
+                },
+                toggleAdminMode() {
+                    this.adminMode = !this.adminMode;
+                    this.adminDropdownOpen = false;
+                    this.editMode = false;
+                },
+                openSettingsModal() {
+                    this.showSettingsModal = true;
+                    this.adminDropdownOpen = false;
+                },
+                closeSettingsModal() {
+                    this.showSettingsModal = false;
+                },
+                saveSettings() {
+                    // Save settings logic here
+                    this.closeSettingsModal();
+                },
+                toggleEditMode() {
+                    if (this.editMode) {
+                        // Save changes
+                        Object.assign(this.selectedSnake, this.editData);
+                        this.editMode = false;
+                    } else {
+                        // Start editing
+                        this.editData = JSON.parse(JSON.stringify(this.selectedSnake));
+                        this.editMode = true;
+                    }
+                },
+                addNewSnake() {
+                    const newSnake = {
+                        id: 'new_' + Date.now(),
+                        name: 'New Resident',
+                        nickname: 'The Newcomer',
+                        species: 'Species (Scientific name)',
+                        hasCamera: false,
+                        temperature: 25.0,
+                        humidity: 60,
+                        age: 'Unknown',
+                        lastMeal: 'Not recorded',
+                        story: 'Add research notes and observations here...',
+                        idealConditions: { tempMin: 24, tempMax: 28, humidityMin: 60, humidityMax: 70 },
+                        lastCleaning: 'Today',
+                        nextCheckup: 'TBD',
+                        researchNotes: ''
+                    };
+                    this.snakes.push(newSnake);
+                    this.adminDropdownOpen = false;
+                },
+                openSnakeProfile(snake) {
+                    this.selectedSnake = snake;
+                    this.editMode = false;
+                    document.body.style.overflow = 'hidden';
+                },
+                closeSnakeProfile() {
+                    this.selectedSnake = null;
+                    this.editMode = false;
+                    document.body.style.overflow = 'auto';
+                }
+            },
+            mounted() {
+                this.updateTime();
+                setInterval(this.updateTime, 1000);
+                
+                // Real-time environmental simulation
+                setInterval(() => {
+                    this.snakes.forEach(snake => {
+                        const tempVariation = (Math.random() - 0.5) * 0.2;
+                        const humidVariation = (Math.random() - 0.5) * 1;
+                        
+                        snake.temperature = Math.round((snake.temperature + tempVariation) * 10) / 10;
+                        snake.humidity = Math.round((snake.humidity + humidVariation) * 10) / 10;
+                        
+                        snake.temperature = Math.max(15, Math.min(40, snake.temperature));
+                        snake.humidity = Math.max(20, Math.min(95, snake.humidity));
+                    });
+                }, this.settings.updateFrequency * 1000);
+                
+                // Close dropdowns when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.relative')) {
+                        this.adminDropdownOpen = false;
+                    }
+                });
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
