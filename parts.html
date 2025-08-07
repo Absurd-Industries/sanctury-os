@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanctuary OS | Component Configurator</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://kit.fontawesome.com/e0c6d65845.js" crossorigin="anonymous"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'radium': '#FF6B35',
+                        'laboratory': '#2A5F41',
+                        'uranium': '#8B9A46',
+                        'polonium': '#D4A574',
+                        'beige-warm': '#F5F0E8',
+                        'beige-cool': '#E8E2D4',
+                        'text-dark': '#2D2D2D',
+                        'text-mid': '#6B6B6B',
+                        'text-light': '#9B9B9B'
+                    },
+                    fontFamily: {
+                        'rubik': ['Rubik', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Rubik', system-ui, sans-serif;
+        }
+        
+        .component-card {
+            transition: all 0.3s ease;
+            cursor: grab;
+        }
+        
+        .component-card:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+        
+        .component-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .tray-slot {
+            transition: all 0.3s ease;
+            border: 2px dashed #D4A574;
+            min-height: 120px;
+        }
+        
+        .tray-slot.drag-over {
+            border-color: #FF6B35;
+            background-color: rgba(255, 107, 53, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .tray-slot.occupied {
+            border-style: solid;
+            border-color: #2A5F41;
+            background-color: rgba(42, 95, 65, 0.05);
+        }
+        
+        .price-pulse {
+            animation: pricePulse 2s infinite;
+        }
+        
+        @keyframes pricePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .recommendation-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: linear-gradient(45deg, #FF6B35, #8B9A46);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        .floating-cart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+        
+        .floating-cart:hover {
+            transform: scale(1.05);
+        }
+        
+        .snake-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #2A5F41, #8B9A46);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body class="bg-beige-cool font-rubik text-text-dark min-h-screen">
+    <div id="app">
+        <!-- Header -->
+        <header class="bg-beige-warm border-b-2 border-polonium p-4 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-8 h-8 bg-laboratory rounded-lg flex items-center justify-center">
+                        <i class="fas fa-cube text-beige-warm text-sm"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-text-dark uppercase tracking-wide">COMPONENT CONFIGURATOR</h1>
+                        <p class="text-xs text-text-mid uppercase tracking-wider">Build Your Monitoring Setup</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="hidden sm:flex items-center space-x-3 text-xs">
+                        <div class="flex items-center space-x-1">
+                            <div class="w-2 h-2 bg-radium rounded-full"></div>
+                            <span class="text-text-mid">{{ totalComponents }} COMPONENTS</span>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <div class="w-2 h-2 bg-laboratory rounded-full"></div>
+                            <span class="text-text-mid">{{ traysInUse }} TRAYS ACTIVE</span>
+                        </div>
+                    </div>
+                    
+                    <button @click="resetAll" class="p-2 rounded-lg hover:bg-radium/20 text-text-mid transition-colors">
+                        <i class="fas fa-undo text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Component Library -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-white rounded-xl border border-polonium p-4">
+                    <h2 class="text-lg font-bold text-text-dark mb-4 flex items-center">
+                        <i class="fas fa-toolbox mr-2 text-laboratory"></i>
+                        Component Library
+                    </h2>
+                    
+                    <!-- Snake Selection -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-text-dark mb-2">Configure for Snake:</label>
+                        <select v-model="selectedSnake" class="w-full p-2 border border-polonium rounded-lg bg-beige-cool/30 text-sm">
+                            <option value="">Custom Build</option>
+                            <option v-for="snake in snakeProfiles" :key="snake.id" :value="snake.id">
+                                {{ snake.name }} ({{ snake.species.split('(')[0].trim() }})
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <!-- Component Categories -->
+                    <div class="space-y-3">
+                        <div v-for="category in componentCategories" :key="category.name" class="space-y-2">
+                            <h3 class="text-sm font-bold text-text-dark uppercase tracking-wide flex items-center">
+                                <i :class="category.icon + ' mr-2 text-' + category.color"></i>
+                                {{ category.name }}
+                            </h3>
+                            
+                            <div v-for="component in category.components" :key="component.id" 
+                                 class="component-card bg-beige-warm border border-polonium rounded-lg p-3 relative"
+                                 draggable="true"
+                                 @dragstart="startDrag(component)"
+                                 @click="addToTray(component)">
+                                
+                                <!-- Recommendation Badge -->
+                                <div v-if="isRecommended(component)" class="recommendation-badge">
+                                    <i class="fas fa-star text-xs"></i>
+                                </div>
+                                
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-bold text-text-dark">{{ component.name }}</h4>
+                                        <p class="text-xs text-text-mid mt-1">{{ component.description }}</p>
+                                        
+                                        <div class="flex items-center space-x-2 mt-2">
+                                            <span class="text-xs bg-laboratory/10 text-laboratory px-2 py-1 rounded">
+                                                {{ component.type }}
+                                            </span>
+                                            <span v-if="component.voltage" class="text-xs bg-uranium/10 text-uranium px-2 py-1 rounded">
+                                                {{ component.voltage }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                                
+                                <a v-if="component.link" :href="component.link" target="_blank" 
+                                   class="block mt-2 text-xs text-laboratory hover:text-radium transition-colors"
+                                   @click.stop>
+                                    <i class="fas fa-external-link-alt mr-1"></i>View Product
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tray Builder -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white rounded-xl border border-polonium p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-bold text-text-dark flex items-center">
+                            <i class="fas fa-layer-group mr-2 text-laboratory"></i>
+                            Monitoring Tray Builder
+                        </h2>
+                        <button @click="addTray" class="bg-laboratory text-white px-3 py-1 rounded-lg text-sm hover:bg-laboratory/80 transition-colors">
+                            <i class="fas fa-plus mr-1"></i>Add Tray
+                        </button>
+                    </div>
+                    
+                    <!-- Trays -->
+                    <div class="space-y-4">
+                        <div v-for="(tray, trayIndex) in trays" :key="tray.id" class="border border-polonium rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="text-sm font-bold text-text-dark flex items-center">
+                                    <i class="fas fa-microchip mr-2 text-uranium"></i>
+                                    {{ tray.name }}
+                                </h3>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs text-text-mid">{{ tray.components.length }}/{{ tray.maxComponents }} slots</span>
+                                    <button @click="removeTray(trayIndex)" class="text-radium hover:text-red-600 transition-colors">
+                                        <i class="fas fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Component Slots -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div v-for="slotIndex in tray.maxComponents" :key="slotIndex"
+                                     class="tray-slot rounded-lg p-3 flex items-center justify-center"
+                                     :class="{ 
+                                         'occupied': tray.components[slotIndex-1],
+                                         'drag-over': dragOverSlot === `${tray.id}-${slotIndex}`
+                                     }"
+                                     @dragover.prevent="dragOverSlot = `${tray.id}-${slotIndex}`"
+                                     @dragleave="dragOverSlot = null"
+                                     @drop="dropComponent(tray.id, slotIndex-1)">
+                                    
+                                    <div v-if="tray.components[slotIndex-1]" class="text-center w-full">
+                                        <div class="bg-white rounded-lg border border-laboratory p-2 relative">
+                                            <button @click="removeComponent(tray.id, slotIndex-1)" 
+                                                    class="absolute -top-2 -right-2 bg-radium text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600">
+                                                ×
+                                            </button>
+                                            <div class="text-xs font-bold text-text-dark">{{ tray.components[slotIndex-1].name }}</div>
+                                            <div class="text-xs text-text-mid mt-1">{{ tray.components[slotIndex-1].type }}</div>
+                                            <div class="text-xs text-radium font-bold mt-1">₹{{ tray.components[slotIndex-1].price || 'TBD' }}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div v-else class="text-center text-text-light">
+                                        <i class="fas fa-plus text-2xl mb-2 opacity-30"></i>
+                                        <div class="text-xs opacity-60">Drop component here</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tray Summary -->
+                            <div class="mt-3 p-3 bg-beige-cool/30 rounded-lg">
+                                <div class="grid grid-cols-3 gap-3 text-center">
+                                    <div>
+                                        <div class="text-xs text-text-mid uppercase tracking-wide">Cost</div>
+                                        <div class="text-sm font-bold text-radium">₹{{ getTrayTotal(tray) }}</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-text-mid uppercase tracking-wide">Power</div>
+                                        <div class="text-sm font-bold text-uranium">{{ getTrayPower(tray) }}W</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-text-mid uppercase tracking-wide">Sensors</div>
+                                        <div class="text-sm font-bold text-laboratory">{{ getTrayCapabilities(tray) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div v-if="trays.length === 0" class="text-center py-12 text-text-light">
+                            <i class="fas fa-layer-group text-4xl mb-4 opacity-30"></i>
+                            <p class="text-lg mb-2">No monitoring trays yet</p>
+                            <p class="text-sm opacity-60">Add a tray to start building your setup</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Configuration Panel -->
+            <div class="lg:col-span-1 space-y-4">
+                <!-- Snake Profile -->
+                <div v-if="selectedSnakeProfile" class="bg-white rounded-xl border border-polonium p-4">
+                    <h3 class="text-lg font-bold text-text-dark mb-3 flex items-center">
+                        <i class="fas fa-snake mr-2 text-laboratory"></i>
+                        Target Profile
+                    </h3>
+                    
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="snake-avatar">{{ selectedSnakeProfile.name.charAt(0) }}</div>
+                        <div>
+                            <div class="text-sm font-bold text-text-dark">{{ selectedSnakeProfile.name }}</div>
+                            <div class="text-xs text-text-mid">{{ selectedSnakeProfile.species.split('(')[0].trim() }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-text-mid">Temperature:</span>
+                            <span class="font-bold text-radium">{{ selectedSnakeProfile.idealTemp.min }}-{{ selectedSnakeProfile.idealTemp.max }}°C</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-text-mid">Humidity:</span>
+                            <span class="font-bold text-uranium">{{ selectedSnakeProfile.idealHumidity.min }}-{{ selectedSnakeProfile.idealHumidity.max }}%</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span class="text-text-mid">Light Level:</span>
+                            <span class="font-bold text-yellow-600">{{ selectedSnakeProfile.idealLight.min }}-{{ selectedSnakeProfile.idealLight.max }} lux</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 p-3 bg-laboratory/10 rounded-lg">
+                        <div class="text-xs font-bold text-laboratory mb-1">Recommended Setup</div>
+                        <div class="text-xs text-text-mid">{{ getRecommendedSetup() }}</div>
+                    </div>
+                </div>
+                
+                <!-- Cost Summary -->
+                <div class="bg-white rounded-xl border border-polonium p-4">
+                    <h3 class="text-lg font-bold text-text-dark mb-3 flex items-center">
+                        <i class="fas fa-calculator mr-2 text-laboratory"></i>
+                        Cost Summary
+                    </h3>
+                    
+                    <div class="space-y-3">
+                        <hr class="border-polonium">
+                        <div class="flex justify-between">
+                            <span class="text-lg font-bold text-text-dark">Total:</span>
+                            <span class="text-lg font-bold text-radium price-pulse">₹{{ totalCost }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <button @click="exportConfiguration" 
+                                class="w-full bg-laboratory text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-laboratory/80 transition-colors">
+                            <i class="fas fa-download mr-2"></i>Export Config
+                        </button>
+                        <button @click="generateBOM" 
+                                class="w-full bg-uranium text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-uranium/80 transition-colors">
+                            <i class="fas fa-list mr-2"></i>Generate BOM
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-xl border border-polonium p-4">
+                    <h3 class="text-lg font-bold text-text-dark mb-3 flex items-center">
+                        <i class="fas fa-lightning-bolt mr-2 text-laboratory"></i>
+                        Quick Builds
+                    </h3>
+                    
+                    <div class="space-y-2">
+                        <button @click="loadTemplate('basic')" 
+                                class="w-full bg-beige-cool border border-polonium py-2 px-3 rounded-lg text-sm text-text-dark hover:bg-polonium/20 transition-colors text-left">
+                            <div class="font-medium">Basic Monitoring</div>
+                            <div class="text-xs text-text-mid">Temp + Humidity sensors</div>
+                        </button>
+                        <button @click="loadTemplate('standard')" 
+                                class="w-full bg-beige-cool border border-polonium py-2 px-3 rounded-lg text-sm text-text-dark hover:bg-polonium/20 transition-colors text-left">
+                            <div class="font-medium">Standard Setup</div>
+                            <div class="text-xs text-text-mid">Full environmental monitoring</div>
+                        </button>
+                        <button @click="loadTemplate('research')" 
+                                class="w-full bg-beige-cool border border-polonium py-2 px-3 rounded-lg text-sm text-text-dark hover:bg-polonium/20 transition-colors text-left">
+                            <div class="font-medium">Research Grade</div>
+                            <div class="text-xs text-text-mid">High-precision + cameras</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Floating Cart -->
+        <div v-if="totalComponents > 0" class="hidden floating-cart">
+            <div class="bg-radium text-white p-4 rounded-xl shadow-lg">
+                <div class="text-sm font-bold mb-1">{{ totalComponents }} Components</div>
+                <div class="text-xs opacity-90">₹{{ totalCost }} total</div>
+                <button @click="proceedToCheckout" class="mt-2 bg-white text-radium px-3 py-1 rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors">
+                    Build It! 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    selectedSnake: '',
+                    draggedComponent: null,
+                    dragOverSlot: null,
+                    trays: [],
+                    nextTrayId: 1,
+                    
+                    // Snake profiles for recommendations
+                    snakeProfiles: [
+                        {
+                            id: 'king-cobra',
+                            name: 'King Cobra',
+                            species: 'Ophiophagus hannah (King Cobra)',
+                            idealTemp: { min: 15, max: 35 },
+                            idealHumidity: { min: 30, max: 100 },
+                            idealLight: { min: 200, max: 800 },
+                            sensorCount: 10
+                        },
+                        {
+                            id: 'spectacled-cobra',
+                            name: 'Spectacled Cobra',
+                            species: 'Naja naja (Spectacled Cobra)',
+                            idealTemp: { min: 20, max: 35 },
+                            idealHumidity: { min: 20, max: 80 },
+                            idealLight: { min: 150, max: 600 },
+                            sensorCount: 6
+                        },
+                        {
+                            id: 'rat-snake',
+                            name: 'Oriental Rat Snake',
+                            species: 'Ptyas mucosa (Oriental Rat Snake)',
+                            idealTemp: { min: 20, max: 40 },
+                            idealHumidity: { min: 20, max: 60 },
+                            idealLight: { min: 200, max: 700 },
+                            sensorCount: 4
+                        },
+                        {
+                            id: 'common-krait',
+                            name: 'Common Krait',
+                            species: 'Bungarus caeruleus (Common Krait)',
+                            idealTemp: { min: 15, max: 35 },
+                            idealHumidity: { min: 30, max: 80 },
+                            idealLight: { min: 10, max: 200 },
+                            sensorCount: 8
+                        },
+                        {
+                            id: 'russells-viper',
+                            name: 'Russell\'s Viper',
+                            species: 'Daboia russelii (Russell\'s Viper)',
+                            idealTemp: { min: 20, max: 40 },
+                            idealHumidity: { min: 20, max: 80 },
+                            idealLight: { min: 300, max: 900 },
+                            sensorCount: 8
+                        }
+                    ],
+                    
+                    // Component library
+                    componentCategories: [
+                        {
+                            name: 'Sensors',
+                            icon: 'fas fa-satellite-dish',
+                            color: 'laboratory',
+                            components: [
+                                {
+                                    id: 'bme280',
+                                    name: 'BME280 Env Sensor',
+                                    description: 'Temperature, humidity, pressure',
+                                    type: 'Environmental',
+                                    voltage: '3.3V/5V',
+                                    price: 251,
+                                    power: 0.1,
+                                    capabilities: ['temp', 'humidity'],
+                                    link: 'https://robu.in/product/gy-bme280-5v-temperature-and-humidity-sensor/',
+                                    stock: 'In Stock',
+                                    recommendations: ['king-cobra', 'spectacled-cobra', 'rat-snake', 'common-krait', 'russells-viper']
+                                },
+                                {
+                                    id: 'ds18b20',
+                                    name: 'DS18B20 Temp Probe',
+                                    description: 'Waterproof contact temperature',
+                                    type: 'Temperature',
+                                    voltage: '3.3V/5V',
+                                    price: 49,
+                                    power: 0.05,
+                                    capabilities: ['temp'],
+                                    link: 'https://robu.in/product/ds18b20-water-proof-temperature-probe-black-1m-2/',
+                                    stock: 'In Stock',
+                                    recommendations: ['king-cobra', 'spectacled-cobra', 'russells-viper']
+                                },
+                                {
+                                    id: 'bh1750',
+                                    name: 'BH1750 Light Sensor',
+                                    description: 'Digital light intensity (LUX)',
+                                    type: 'Light',
+                                    voltage: '3.3V/5V',
+                                    price: 99,
+                                    power: 0.12,
+                                    capabilities: ['light'],
+                                    link: 'https://robu.in/product/gy-302-bh1750-light-intensity-module/',
+                                    stock: 'In Stock',
+                                    recommendations: ['rat-snake', 'russells-viper']
+                                }
+                            ]
+                        },
+                        {
+                            name: 'Compute',
+                            icon: 'fas fa-microchip',
+                            color: 'uranium',
+                            components: [
+                                {
+                                    id: 'pi-zero-2w',
+                                    name: 'Pi Zero 2W',
+                                    description: 'Primary compute module',
+                                    type: 'Computer',
+                                    voltage: '5V',
+                                    price: 1592,
+                                    power: 2.5,
+                                    capabilities: ['compute', 'wifi'],
+                                    link: 'https://robu.in/product/raspberry-pi-zero-2-w/',
+                                    stock: 'Limited',
+                                    recommendations: ['king-cobra', 'spectacled-cobra', 'rat-snake', 'common-krait', 'russells-viper']
+                                },
+                                {
+                                    id: 'glyph-c3',
+                                    name: 'Glyph C3',
+                                    description: 'Secondary compute module',
+                                    type: 'Microcontroller',
+                                    voltage: '3.3V',
+                                    price: 434,
+                                    power: 0.8,
+                                    capabilities: ['compute', 'wifi'],
+                                    link: 'https://shop.pcbcupid.com/product/gd001/',
+                                    stock: 'In Stock',
+                                    recommendations: ['spectacled-cobra', 'rat-snake', 'common-krait']
+                                }
+                            ]
+                        },
+                        {
+                            name: 'Cameras',
+                            icon: 'fas fa-video',
+                            color: 'radium',
+                            components: [
+                                {
+                                    id: 'pi-camera-noir',
+                                    name: 'Pi Camera NOIR V2',
+                                    description: 'Night vision camera',
+                                    type: 'Camera',
+                                    voltage: '3.3V',
+                                    price: 1539,
+                                    power: 1.5,
+                                    capabilities: ['video', 'infrared'],
+                                    link: 'https://robu.in/product/raspberry-pi-camera-noir-v2/',
+                                    stock: 'In Stock',
+                                    recommendations: ['common-krait', 'king-cobra']
+                                },
+                                {
+                                    id: 'pi-camera-v2',
+                                    name: 'Pi Camera V2',
+                                    description: '5MP daylight camera',
+                                    type: 'Camera',
+                                    voltage: '3.3V',
+                                    price: 232,
+                                    power: 1.2,
+                                    capabilities: ['video'],
+                                    link: 'https://robu.in/product/raspberry-pi-camera-module/',
+                                    stock: 'In Stock',
+                                    recommendations: ['rat-snake', 'spectacled-cobra', 'russells-viper']
+                                }
+                            ]
+                        },
+                        {
+                            name: 'Control',
+                            icon: 'fas fa-plug',
+                            color: 'polonium',
+                            components: [
+                                {
+                                    id: 'smart-plug',
+                                    name: 'TP-Link Smart Plug',
+                                    description: 'Remote control lights/heating',
+                                    type: 'Controller',
+                                    voltage: '230V AC',
+                                    price: 699,
+                                    power: 0.5,
+                                    capabilities: ['control', 'monitoring'],
+                                    link: 'https://www.swiggy.com/stores/instamart/p/tp-link-tapo-p110-mini-16a-smart-wi-fi-plug-energy-monitoring-compatible-with-alexa-white-CH52YOLF0P?locId=MTkuMTYzNzg3Myw3My4wNzYwMDU5MjAw&srsltid=AfmBOoprE5HCktkSe9Njo8V3d8Pj_U8N-JF5Y3Hp7zz79vlb2q3qY-Ylopk&region_id=MTIuODgyMjc1MDQsNzcuNjc2MzI0NTMw',
+                                    stock: 'In Stock',
+                                    recommendations: ['king-cobra', 'spectacled-cobra', 'russells-viper']
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            computed: {
+                selectedSnakeProfile() {
+                    return this.snakeProfiles.find(s => s.id === this.selectedSnake);
+                },
+                totalComponents() {
+                    return this.trays.reduce((total, tray) => total + tray.components.length, 0);
+                },
+                traysInUse() {
+                    return this.trays.filter(tray => tray.components.length > 0).length;
+                },
+                totalComponentCost() {
+                    let total = 0;
+                    this.trays.forEach(tray => {
+                        tray.components.forEach(comp => {
+                            if (comp && comp.price) total += comp.price;
+                        });
+                    });
+                    return total;
+                },
+                assemblyCost() {
+                    return Math.round(this.totalComponentCost * 0.0); // 15% assembly cost
+                },
+                shippingCost() {
+                    return this.totalComponentCost > 2000 ? 0 : 150; // Free shipping over ₹2000
+                },
+                totalCost() {
+                    return this.totalComponentCost + this.assemblyCost + this.shippingCost;
+                }
+            },
+            methods: {
+                addTray() {
+                    this.trays.push({
+                        id: this.nextTrayId++,
+                        name: `Monitoring Tray ${this.trays.length + 1}`,
+                        maxComponents: 6,
+                        components: []
+                    });
+                },
+                removeTray(index) {
+                    this.trays.splice(index, 1);
+                },
+                startDrag(component) {
+                    this.draggedComponent = component;
+                },
+                dropComponent(trayId, slotIndex) {
+                    if (!this.draggedComponent) return;
+                    
+                    const tray = this.trays.find(t => t.id === trayId);
+                    if (tray && slotIndex < tray.maxComponents) {
+                        // Ensure components array is long enough
+                        while (tray.components.length <= slotIndex) {
+                            tray.components.push(null);
+                        }
+                        tray.components[slotIndex] = { ...this.draggedComponent };
+                    }
+                    
+                    this.draggedComponent = null;
+                    this.dragOverSlot = null;
+                },
+                addToTray(component) {
+                    // Add to first available slot in first tray
+                    if (this.trays.length === 0) {
+                        this.addTray();
+                    }
+                    
+                    for (let tray of this.trays) {
+                        for (let i = 0; i < tray.maxComponents; i++) {
+                            if (!tray.components[i]) {
+                                while (tray.components.length <= i) {
+                                    tray.components.push(null);
+                                }
+                                tray.components[i] = { ...component };
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // If no slots available, create new tray
+                    this.addTray();
+                    const newTray = this.trays[this.trays.length - 1];
+                    newTray.components[0] = { ...component };
+                },
+                removeComponent(trayId, slotIndex) {
+                    const tray = this.trays.find(t => t.id === trayId);
+                    if (tray) {
+                        tray.components[slotIndex] = null;
+                    }
+                },
+                getTrayTotal(tray) {
+                    return tray.components.reduce((total, comp) => {
+                        return total + (comp && comp.price ? comp.price : 0);
+                    }, 0);
+                },
+                getTrayPower(tray) {
+                    return tray.components.reduce((total, comp) => {
+                        return total + (comp && comp.power ? comp.power : 0);
+                    }, 0).toFixed(1);
+                },
+                getTrayCapabilities(tray) {
+                    const capabilities = new Set();
+                    tray.components.forEach(comp => {
+                        if (comp && comp.capabilities) {
+                            comp.capabilities.forEach(cap => capabilities.add(cap));
+                        }
+                    });
+                    return capabilities.size;
+                },
+                isRecommended(component) {
+                    if (!this.selectedSnake || !component.recommendations) return false;
+                    return component.recommendations.includes(this.selectedSnake);
+                },
+                getRecommendedSetup() {
+                    if (!this.selectedSnakeProfile) return '';
+                    
+                    const profile = this.selectedSnakeProfile;
+                    if (profile.sensorCount >= 8) {
+                        return 'Research-grade monitoring with multiple sensor points';
+                    } else if (profile.sensorCount >= 6) {
+                        return 'Standard monitoring with environmental sensors';
+                    } else {
+                        return 'Basic monitoring suitable for educational displays';
+                    }
+                },
+                loadTemplate(template) {
+                    this.trays = []; // Clear existing trays
+                    
+                    if (template === 'basic') {
+                        this.addTray();
+                        const tray = this.trays[0];
+                        tray.name = 'Basic Environmental';
+                        
+                        // Add BME280 and compute module
+                        const bme280 = this.componentCategories[0].components.find(c => c.id === 'bme280');
+                        const compute = this.componentCategories[1].components.find(c => c.id === 'glyph-c3');
+                        
+                        tray.components = [{ ...bme280 }, { ...compute }, null, null, null, null];
+                        
+                    } else if (template === 'standard') {
+                        this.addTray();
+                        const tray = this.trays[0];
+                        tray.name = 'Standard Monitoring';
+                        
+                        const bme280 = this.componentCategories[0].components.find(c => c.id === 'bme280');
+                        const ds18b20 = this.componentCategories[0].components.find(c => c.id === 'ds18b20');
+                        const bh1750 = this.componentCategories[0].components.find(c => c.id === 'bh1750');
+                        const compute = this.componentCategories[1].components.find(c => c.id === 'pi-zero-2w');
+                        const smartPlug = this.componentCategories[3].components.find(c => c.id === 'smart-plug');
+                        
+                        tray.components = [{ ...bme280 }, { ...ds18b20 }, { ...bh1750 }, { ...compute }, { ...smartPlug }, null];
+                        
+                    } else if (template === 'research') {
+                        this.addTray();
+                        const tray = this.trays[0];
+                        tray.name = 'Research Grade';
+                        
+                        const bme280 = this.componentCategories[0].components.find(c => c.id === 'bme280');
+                        const ds18b20 = this.componentCategories[0].components.find(c => c.id === 'ds18b20');
+                        const bh1750 = this.componentCategories[0].components.find(c => c.id === 'bh1750');
+                        const compute = this.componentCategories[1].components.find(c => c.id === 'pi-zero-2w');
+                        const camera = this.componentCategories[2].components.find(c => c.id === 'pi-camera-noir');
+                        const smartPlug = this.componentCategories[3].components.find(c => c.id === 'smart-plug');
+                        
+                        tray.components = [{ ...bme280 }, { ...ds18b20 }, { ...bh1750 }, { ...compute }, { ...camera }, { ...smartPlug }];
+                    }
+                },
+                exportConfiguration() {
+                    const config = {
+                        snake: this.selectedSnakeProfile,
+                        trays: this.trays,
+                        totalCost: this.totalCost,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    const dataStr = JSON.stringify(config, null, 2);
+                    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                    
+                    const exportFileDefaultName = `sanctuary-config-${Date.now()}.json`;
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                },
+                generateBOM() {
+                    let bomText = 'SANCTUARY OS - BILL OF MATERIALS\n';
+                    bomText += `Generated: ${new Date().toLocaleDateString()}\n\n`;
+                    
+                    if (this.selectedSnakeProfile) {
+                        bomText += `Target Species: ${this.selectedSnakeProfile.name}\n`;
+                        bomText += `Scientific Name: ${this.selectedSnakeProfile.species}\n\n`;
+                    }
+                    
+                    bomText += 'COMPONENTS:\n';
+                    bomText += '-'.repeat(50) + '\n';
+                    
+                    let itemNumber = 1;
+                    this.trays.forEach((tray, trayIndex) => {
+                        bomText += `\nTray ${trayIndex + 1}: ${tray.name}\n`;
+                        tray.components.forEach(comp => {
+                            if (comp) {
+                                bomText += `${itemNumber.toString().padStart(2, '0')}. ${comp.name}\n`;
+                                bomText += `    Description: ${comp.description}\n`;
+                                bomText += `    Type: ${comp.type}\n`;
+                                bomText += `    Price: ₹${comp.price || 'TBD'}\n`;
+                                if (comp.link) {
+                                    bomText += `    Link: ${comp.link}\n`;
+                                }
+                                bomText += '\n';
+                                itemNumber++;
+                            }
+                        });
+                    });
+                    
+                    bomText += '\nCOST SUMMARY:\n';
+                    bomText += '-'.repeat(50) + '\n';
+                    bomText += `Components: ₹${this.totalComponentCost}\n`;
+                    bomText += `TOTAL: ₹${this.totalCost}\n`;
+                    
+                    const dataUri = 'data:text/plain;charset=utf-8,'+ encodeURIComponent(bomText);
+                    const exportFileDefaultName = `sanctuary-bom-${Date.now()}.txt`;
+                    
+                    const linkElement = document.createElement('a');
+                    linkElement.setAttribute('href', dataUri);
+                    linkElement.setAttribute('download', exportFileDefaultName);
+                    linkElement.click();
+                },
+                proceedToCheckout() {
+                    alert('Whoa there, speed demon! 🚀\n\nThis would normally take you to checkout, but since we\'re in demo mode, how about you just admire your excellent component choices instead? \n\nPro tip: Use the Export Config button to save your build! 😉');
+                },
+                resetAll() {
+                    if (confirm('Reset everything? Your carefully crafted build will be gone faster than a snake shedding its skin! 🐍')) {
+                        this.trays = [];
+                        this.selectedSnake = '';
+                        this.nextTrayId = 1;
+                    }
+                }
+            },
+            mounted() {
+                // Load a default template to show the interface
+                this.selectedSnake = 'king-cobra';
+                this.loadTemplate('standard');
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
