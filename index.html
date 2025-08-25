@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sanctuary OS | The Liana Trust</title>
+    <title>Rockpod Documentation | Sanctuary OS</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -26,6 +26,25 @@
                     },
                     fontFamily: {
                         'rubik': ['Rubik', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'slide-down': 'slideDown 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        slideDown: {
+                            '0%': { height: '0', opacity: '0' },
+                            '100%': { height: 'auto', opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { height: 'auto', opacity: '1' },
+                            '100%': { height: '0', opacity: '0' }
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(255, 107, 53, 0.3)' },
+                            '50%': { boxShadow: '0 0 20px rgba(255, 107, 53, 0.6)' }
+                        }
                     }
                 }
             }
@@ -33,487 +52,808 @@
     </script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800&display=swap');
         
         * {
             font-family: 'Rubik', system-ui, sans-serif;
         }
         
-        .glass-overlay {
+        .app-header {
+            background: linear-gradient(135deg, #2A5F41 0%, #8B9A46 100%);
+            backdrop-filter: blur(20px);
+        }
+        
+        .glass-card {
             backdrop-filter: blur(12px);
-            background: rgba(45, 45, 45, 0.25);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(42, 95, 65, 0.1);
         }
         
-        .camera-feed {
-            background: linear-gradient(45deg, #E8E2D4 25%, transparent 25%),
-                        linear-gradient(-45deg, #E8E2D4 25%, transparent 25%),
-                        linear-gradient(45deg, transparent 75%, #E8E2D4 75%),
-                        linear-gradient(-45deg, transparent 75%, #E8E2D4 75%);
-            background-size: 12px 12px;
-            background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
+        .vendor-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
         }
         
-        .live-pulse {
-            animation: pulse 2s infinite;
+        .vendor-card:hover {
+            border-color: #FF6B35;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.15);
         }
         
-        .slide-up {
-            animation: slideUp 0.3s ease-out;
+        .buy-button {
+            background: linear-gradient(135deg, #FF6B35 0%, #2A5F41 100%);
+            transition: all 0.3s ease;
         }
         
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .buy-button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
         }
         
-        .subtle-shadow {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        .accordion-trigger {
+            transition: all 0.3s ease;
         }
         
-        .sensor-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            position: absolute;
-            animation: sensorPulse 3s infinite;
+        .accordion-trigger.active {
+            background: linear-gradient(135deg, #2A5F41 0%, #8B9A46 100%);
+            color: white;
         }
         
-        @keyframes sensorPulse {
-            0%, 100% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        .lighting-cycle {
-            background: linear-gradient(90deg, #1a1a2e 0%, #16213e 25%, #eee2dc 50%, #e85a4f 75%, #1a1a2e 100%);
-            animation: lightCycle 10s infinite linear;
+        .accordion-content.active {
+            max-height: 2000px;
         }
         
-        @keyframes lightCycle {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        .progress-ring {
+            transition: stroke-dashoffset 0.3s ease;
+        }
+        
+        .floating-total {
+            position: sticky;
+            bottom: 1rem;
+            z-index: 50;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-app-layout {
+                padding-bottom: 100px;
+            }
         }
     </style>
 </head>
 
-<body class="bg-beige-cool font-rubik text-text-dark min-h-screen">
-    <div id="app">
-        <!-- OS Header -->
-        <header class="bg-beige-warm border-b-2 border-polonium p-4 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-8 h-8 bg-laboratory rounded-lg flex items-center justify-center">
-                        <i class="fas fa-leaf text-beige-warm text-sm"></i>
+<body class="bg-beige-cool font-rubik text-text-dark">
+    <div id="app" class="mobile-app-layout">
+        <!-- Mobile App Header -->
+        <header class="app-header sticky top-0 z-40 px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                        <i class="fas fa-mountain text-white text-lg"></i>
                     </div>
                     <div>
-                        <h1 class="text-lg font-bold text-text-dark uppercase tracking-wide">SANCTUARY OS</h1>
-                        <p class="text-xs text-text-mid uppercase tracking-wider">The Liana Trust Research Station</p>
+                        <h1 class="text-lg sm:text-xl font-bold text-white">Rockpod Builder</h1>
+                        <p class="text-xs text-white/80 uppercase tracking-wider">Sanctuary OS</p>
                     </div>
                 </div>
                 
-                <div class="flex items-center space-x-4">
-                    <div class="hidden sm:flex items-center space-x-3 text-xs">
-                        <div class="flex items-center space-x-1">
-                            <div class="w-2 h-2 bg-polonium rounded-full live-pulse"></div>
-                            <span class="text-text-mid">{{ totalSnakes }} RESIDENTS</span>
-                        </div>
-                        <span class="text-text-mid">{{ currentTime }}</span>
-                    </div>
-                    
-                    <div class="relative">
-                        <button @click="toggleAdminDropdown" 
-                                :class="['p-2 rounded-lg transition-colors', adminDropdownOpen ? 'bg-radium text-white' : 'hover:bg-polonium/30 text-text-mid']">
-                            <i class="fas fa-cog text-sm"></i>
-                        </button>
-                        
-                        <div v-if="adminDropdownOpen" class="absolute right-0 top-12 bg-white rounded-lg shadow-lg py-2 w-48 z-50 border border-polonium">
-                            <button @click="toggleAdminMode" :class="['w-full text-left px-4 py-2 text-sm hover:bg-beige-warm flex items-center', adminMode ? 'text-radium font-medium' : 'text-text-dark']">
-                                <i class="fas fa-edit mr-2"></i>
-                                {{ adminMode ? 'Exit Admin Mode' : 'Enter Admin Mode' }}
-                            </button>
-                            <button @click="addNewSnake" class="w-full text-left px-4 py-2 text-sm text-laboratory hover:bg-beige-warm flex items-center">
-                                <i class="fas fa-plus mr-2"></i>Add New Resident
-                            </button>
-                        </div>
-                    </div>
+                <div class="flex items-center space-x-3">
+                    <a href="./index-dashboard.html" 
+                       class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors">
+                        <i class="fas fa-chart-line text-white text-sm"></i>
+                    </a>
+                    <a href="./parts.html" 
+                       class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm hover:bg-white/30 transition-colors">
+                        <i class="fas fa-cogs text-white text-sm"></i>
+                    </a>
                 </div>
             </div>
         </header>
 
-        <!-- Admin Banner -->
-        <div v-if="adminMode" class="px-4 max-w-7xl mx-auto mb-6 pt-4">
-            <div class="bg-radium/10 border border-radium/30 rounded-xl p-4 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <i class="fas fa-user-shield text-radium"></i>
-                    <span class="font-medium text-radium uppercase tracking-wide">Admin Mode Active</span>
+        <!-- Quick Stats -->
+        <section class="px-4 py-6 sm:px-6">
+            <div class="grid grid-cols-3 gap-4">
+                <div class="glass-card rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-laboratory">3</div>
+                    <div class="text-xs text-text-mid uppercase tracking-wide">Units</div>
                 </div>
-                <span class="text-xs text-text-mid">Click any resident card to edit details</span>
+                <div class="glass-card rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-radium">₹8,154</div>
+                    <div class="text-xs text-text-mid uppercase tracking-wide">Total Cost</div>
+                </div>
+                <div class="glass-card rounded-xl p-4 text-center">
+                    <div class="text-2xl font-bold text-uranium">60+h</div>
+                    <div class="text-xs text-text-mid uppercase tracking-wide">Runtime</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Accordion Sections -->
+        <div class="px-4 space-y-4 sm:px-6">
+            
+            <!-- Overview Section -->
+            <div class="glass-card rounded-xl overflow-hidden">
+                <button @click="toggleSection('overview')" 
+                        :class="['w-full p-4 text-left accordion-trigger flex items-center justify-between', 
+                                 activeSection === 'overview' ? 'active' : 'hover:bg-laboratory/5']">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-info-circle"></i>
+                        <span class="font-semibold">Project Overview</span>
+                    </div>
+                    <i :class="['fas fa-chevron-down transition-transform', 
+                               activeSection === 'overview' ? 'rotate-180' : '']"></i>
+                </button>
+                
+                <div :class="['accordion-content', activeSection === 'overview' ? 'active' : '']">
+                    <div class="p-4 pt-0 space-y-4">
+                        <p class="text-text-mid leading-relaxed">
+                            Rockpods are wireless environmental monitoring nodes designed for wildlife enclosures. 
+                            Each unit provides real-time data on temperature, humidity, light levels, and motion detection 
+                            while being camouflaged as natural rocks to avoid disturbing animal behavior.
+                        </p>
+                        
+                        <div class="bg-laboratory/5 rounded-lg p-4">
+                            <h3 class="font-semibold text-laboratory mb-2">Key Features</h3>
+                            <ul class="text-sm text-text-mid space-y-1">
+                                <li>• ESP32-based with WiFi connectivity</li>
+                                <li>• BME280 sensor: ±0.5°C accuracy</li>
+                                <li>• 60+ hour battery life</li>
+                                <li>• IP65 weatherproof housing</li>
+                                <li>• Passive motion detection</li>
+                                <li>• Real-time dashboard integration</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-radium/5 rounded-lg p-4">
+                            <h3 class="font-semibold text-radium mb-2">Perfect For</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                                <div class="text-center">
+                                    <i class="fas fa-university text-uranium text-lg mb-1"></i>
+                                    <div class="font-medium">Research Facilities</div>
+                                </div>
+                                <div class="text-center">
+                                    <i class="fas fa-graduation-cap text-uranium text-lg mb-1"></i>
+                                    <div class="font-medium">Educational Centers</div>
+                                </div>
+                                <div class="text-center">
+                                    <i class="fas fa-heart text-uranium text-lg mb-1"></i>
+                                    <div class="font-medium">Rescue Operations</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOM Section -->
+            <div class="glass-card rounded-xl overflow-hidden">
+                <button @click="toggleSection('bom')" 
+                        :class="['w-full p-4 text-left accordion-trigger flex items-center justify-between', 
+                                 activeSection === 'bom' ? 'active' : 'hover:bg-laboratory/5']">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="font-semibold">Order Components</span>
+                        <span class="text-xs bg-radium text-white px-2 py-1 rounded-full animate-pulse-glow">
+                            Order Now!
+                        </span>
+                    </div>
+                    <i :class="['fas fa-chevron-down transition-transform', 
+                               activeSection === 'bom' ? 'rotate-180' : '']"></i>
+                </button>
+                
+                <div :class="['accordion-content', activeSection === 'bom' ? 'active' : '']">
+                    <div class="p-4 pt-0 space-y-6">
+                        
+                        <!-- Vendor: Robocraze -->
+                        <div class="vendor-card bg-white rounded-xl p-4 border-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-laboratory/10 rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-microchip text-laboratory text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-text-dark">Robocraze</h3>
+                                        <p class="text-sm text-text-mid">Primary Electronics</p>
+                                        <p class="text-xs text-laboratory">Kalyan Nagar, Bengaluru • Same Day Dispatch</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold text-laboratory">₹3,498</div>
+                                    <div class="text-xs text-text-mid">Total</div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3 mb-4">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">ESP32 Development Board (38-pin)</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹1,347</div>
+                                        <div class="text-xs text-text-mid">₹449 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">BME280 Environmental Sensor</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹897</div>
+                                        <div class="text-xs text-text-mid">₹299 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">BH1750 Light Sensor</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹387</div>
+                                        <div class="text-xs text-text-mid">₹129 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2">
+                                    <div>
+                                        <div class="font-medium text-sm">HC-SR501 PIR Motion Sensor</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹237</div>
+                                        <div class="text-xs text-text-mid">₹79 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2">
+                                    <div>
+                                        <div class="font-medium text-sm">ESP32-CAM with OV2640</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹630</div>
+                                        <div class="text-xs text-text-mid">₹210 each</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <a href="https://robocraze.com/" target="_blank" 
+                               class="buy-button w-full text-white py-3 px-4 rounded-xl font-semibold text-center block hover:shadow-lg transition-all">
+                                <i class="fas fa-external-link-alt mr-2"></i>
+                                Order from Robocraze (₹3,498)
+                            </a>
+                            
+                            <div class="mt-3 text-xs text-text-mid bg-gray-50 rounded-lg p-3">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <strong>Shopping Tip:</strong> Add all items to cart, then checkout. Free shipping above ₹500. COD available.
+                            </div>
+                        </div>
+
+                        <!-- Vendor: Robu.in -->
+                        <div class="vendor-card bg-white rounded-xl p-4 border-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-uranium/10 rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-battery-three-quarters text-uranium text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-text-dark">Robu.in</h3>
+                                        <p class="text-sm text-text-mid">Power & Components</p>
+                                        <p class="text-xs text-uranium">Pan-India • 2-3 Days Delivery</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold text-uranium">₹2,826</div>
+                                    <div class="text-xs text-text-mid">Total</div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3 mb-4">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">Samsung 18650 2600mAh Battery</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹951</div>
+                                        <div class="text-xs text-text-mid">₹317 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">TP4056 USB-C Charging Module</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹507</div>
+                                        <div class="text-xs text-text-mid">₹169 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">18650 Battery Holder (SMD)</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹285</div>
+                                        <div class="text-xs text-text-mid">₹95 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">3.3V Buck/Boost Converter</div>
+                                        <div class="text-xs text-text-mid">Qty: 3 units</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹153</div>
+                                        <div class="text-xs text-text-mid">₹51 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2">
+                                    <div>
+                                        <div class="font-medium text-sm">JST XH Connectors (Mixed Pack)</div>
+                                        <div class="text-xs text-text-mid">Qty: 10 sets</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹180</div>
+                                        <div class="text-xs text-text-mid">₹18 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2">
+                                    <div>
+                                        <div class="font-medium text-sm">Conformal Coating (250ml)</div>
+                                        <div class="text-xs text-text-mid">Qty: 1 bottle</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹450</div>
+                                        <div class="text-xs text-text-mid">₹450 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2">
+                                    <div>
+                                        <div class="font-medium text-sm">Cable Glands & Assembly Parts</div>
+                                        <div class="text-xs text-text-mid">Mixed components</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹300</div>
+                                        <div class="text-xs text-text-mid">Bulk price</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <a href="https://robu.in/" target="_blank" 
+                               class="buy-button w-full text-white py-3 px-4 rounded-xl font-semibold text-center block hover:shadow-lg transition-all">
+                                <i class="fas fa-external-link-alt mr-2"></i>
+                                Order from Robu.in (₹2,826)
+                            </a>
+                            
+                            <div class="mt-3 text-xs text-text-mid bg-gray-50 rounded-lg p-3">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                <strong>Shopping Tip:</strong> Free delivery above ₹500. COD available above ₹999.
+                            </div>
+                        </div>
+
+                        <!-- Vendor: Local Sources -->
+                        <div class="vendor-card bg-white rounded-xl p-4 border-2">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-radium/10 rounded-xl flex items-center justify-center">
+                                        <i class="fas fa-store text-radium text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-text-dark">Local Bengaluru</h3>
+                                        <p class="text-sm text-text-mid">Housing & Assembly</p>
+                                        <p class="text-xs text-radium">Various Locations • Same Day Pickup</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold text-radium">₹1,830</div>
+                                    <div class="text-xs text-text-mid">Total</div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3 mb-4">
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">IP65 Waterproof Enclosures</div>
+                                        <div class="text-xs text-text-mid">80x120x85mm • Qty: 3</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹1,200</div>
+                                        <div class="text-xs text-text-mid">₹400 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                                    <div>
+                                        <div class="font-medium text-sm">PG7 Cable Glands</div>
+                                        <div class="text-xs text-text-mid">GM Modular • Qty: 6</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹210</div>
+                                        <div class="text-xs text-text-mid">₹35 each</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex justify-between items-center py-2">
+                                    <div>
+                                        <div class="font-medium text-sm">Assembly Materials</div>
+                                        <div class="text-xs text-text-mid">Wires, sealant, hardware</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="font-semibold">₹420</div>
+                                        <div class="text-xs text-text-mid">Mixed items</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <a href="https://www.amazon.in/s?k=IP65+waterproof+enclosure" target="_blank" 
+                                   class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg font-medium text-center block text-sm transition-colors">
+                                    <i class="fab fa-amazon mr-2"></i>
+                                    Amazon: Enclosures (₹1,200)
+                                </a>
+                                
+                                <div class="text-xs text-text-mid bg-gray-50 rounded-lg p-3">
+                                    <i class="fas fa-map-marker-alt mr-1"></i>
+                                    <strong>GM Modular:</strong> #460/20/1, Jayanagar for cable glands and hardware
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assembly Guide Section -->
+            <div class="glass-card rounded-xl overflow-hidden">
+                <button @click="toggleSection('assembly')" 
+                        :class="['w-full p-4 text-left accordion-trigger flex items-center justify-between', 
+                                 activeSection === 'assembly' ? 'active' : 'hover:bg-laboratory/5']">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-screwdriver-wrench"></i>
+                        <span class="font-semibold">Assembly Guide</span>
+                    </div>
+                    <i :class="['fas fa-chevron-down transition-transform', 
+                               activeSection === 'assembly' ? 'rotate-180' : '']"></i>
+                </button>
+                
+                <div :class="['accordion-content', activeSection === 'assembly' ? 'active' : '']">
+                    <div class="p-4 pt-0 space-y-6">
+                        
+                        <div class="bg-laboratory/5 rounded-lg p-4">
+                            <h3 class="font-semibold text-laboratory mb-2">Tools Required</h3>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-check text-accent w-4"></i>
+                                    <span>Pinceil Soldering Iron</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-check text-accent w-4"></i>
+                                    <span>Hot Air Gun</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-check text-accent w-4"></i>
+                                    <span>Hand Drill</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-check text-accent w-4"></i>
+                                    <span>Crimping Kit</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                <h4 class="font-semibold text-text-dark mb-2">Step 1: Prepare Electronics</h4>
+                                <div class="text-sm text-text-mid space-y-2">
+                                    <p>• Flash ESP32 with Sanctuary OS firmware</p>
+                                    <p>• Test all sensors on breadboard first</p>
+                                    <p>• Apply conformal coating to exposed traces</p>
+                                    <p>• Allow 24h cure time before assembly</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                <h4 class="font-semibold text-text-dark mb-2">Step 2: Wire Sensor Network</h4>
+                                <div class="bg-gray-50 rounded p-3 font-mono text-xs overflow-x-auto">
+<pre>BME280 (I2C):
+  VCC → ESP32 3.3V
+  GND → ESP32 GND  
+  SCL → GPIO 22
+  SDA → GPIO 21
+
+PIR Sensor:
+  VCC → ESP32 5V
+  GND → ESP32 GND
+  OUT → GPIO 18</pre>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                <h4 class="font-semibold text-text-dark mb-2">Step 3: Power System</h4>
+                                <div class="text-sm text-text-mid space-y-2">
+                                    <p>• Connect 18650 to TP4056 charging module</p>
+                                    <p>• Wire buck/boost converter for 3.3V output</p>
+                                    <p>• Test charging with USB-C connection</p>
+                                    <p>• Verify 60+ hour runtime in deep sleep</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                <h4 class="font-semibold text-text-dark mb-2">Step 4: Enclosure Prep</h4>
+                                <div class="text-sm text-text-mid space-y-2">
+                                    <p>• Drill 6mm hole for antenna (if needed)</p>
+                                    <p>• Cut 20x20mm window for light sensor</p>
+                                    <p>• Install PG7 cable gland for charging</p>
+                                    <p>• Apply IP65 sealant around openings</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployment Roadmap Section -->
+            <div class="glass-card rounded-xl overflow-hidden">
+                <button @click="toggleSection('roadmap')" 
+                        :class="['w-full p-4 text-left accordion-trigger flex items-center justify-between', 
+                                 activeSection === 'roadmap' ? 'active' : 'hover:bg-laboratory/5']">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="font-semibold">4-Day Deployment Plan</span>
+                        <span class="text-xs bg-uranium text-white px-2 py-1 rounded-full">
+                            Aug 13-16
+                        </span>
+                    </div>
+                    <i :class="['fas fa-chevron-down transition-transform', 
+                               activeSection === 'roadmap' ? 'rotate-180' : '']"></i>
+                </button>
+                
+                <div :class="['accordion-content', activeSection === 'roadmap' ? 'active' : '']">
+                    <div class="p-4 pt-0 space-y-4">
+                        
+                        <!-- Progress Overview -->
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold text-text-dark">Overall Progress</h3>
+                                <span class="text-sm text-text-mid">{{ totalProgress }}% Complete</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-laboratory to-uranium h-2 rounded-full transition-all duration-500" 
+                                     :style="`width: ${totalProgress}%`"></div>
+                            </div>
+                        </div>
+
+                        <!-- Day 1 -->
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-semibold text-laboratory">Day 1: Collection & Setup</h4>
+                                <span class="text-xs text-text-mid">Aug 13, 2025</span>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day1.task1" class="rounded">
+                                    <span :class="day1.task1 ? 'line-through text-text-light' : ''">
+                                        Collect components from suppliers
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day1.task2" class="rounded">
+                                    <span :class="day1.task2 ? 'line-through text-text-light' : ''">
+                                        Inventory check against BOM
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day1.task3" class="rounded">
+                                    <span :class="day1.task3 ? 'line-through text-text-light' : ''">
+                                        Set up mobile workstation
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day1.task4" class="rounded">
+                                    <span :class="day1.task4 ? 'line-through text-text-light' : ''">
+                                        Flash ESP32 firmware & test
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Day 2 -->
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-semibold text-uranium">Day 2: Assembly</h4>
+                                <span class="text-xs text-text-mid">Aug 14, 2025</span>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day2.task1" class="rounded">
+                                    <span :class="day2.task1 ? 'line-through text-text-light' : ''">
+                                        Solder sensor networks
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day2.task2" class="rounded">
+                                    <span :class="day2.task2 ? 'line-through text-text-light' : ''">
+                                        Assemble power systems
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day2.task3" class="rounded">
+                                    <span :class="day2.task3 ? 'line-through text-text-light' : ''">
+                                        Modify enclosures
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day2.task4" class="rounded">
+                                    <span :class="day2.task4 ? 'line-through text-text-light' : ''">
+                                        Apply weatherproofing
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Day 3 -->
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-semibold text-radium">Day 3: Deployment</h4>
+                                <span class="text-xs text-text-mid">Aug 15, 2025</span>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day3.task1" class="rounded">
+                                    <span :class="day3.task1 ? 'line-through text-text-light' : ''">
+                                        Install in enclosures
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day3.task2" class="rounded">
+                                    <span :class="day3.task2 ? 'line-through text-text-light' : ''">
+                                        Configure WiFi networks
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day3.task3" class="rounded">
+                                    <span :class="day3.task3 ? 'line-through text-text-light' : ''">
+                                        Test dashboard integration
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day3.task4" class="rounded">
+                                    <span :class="day3.task4 ? 'line-through text-text-light' : ''">
+                                        Train facility staff
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Day 4 -->
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-semibold text-polonium">Day 4: Handover</h4>
+                                <span class="text-xs text-text-mid">Aug 16, 2025</span>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day4.task1" class="rounded">
+                                    <span :class="day4.task1 ? 'line-through text-text-light' : ''">
+                                        Create documentation
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day4.task2" class="rounded">
+                                    <span :class="day4.task2 ? 'line-through text-text-light' : ''">
+                                        Record training videos
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day4.task3" class="rounded">
+                                    <span :class="day4.task3 ? 'line-through text-text-light' : ''">
+                                        48-hour operation test
+                                    </span>
+                                </label>
+                                <label class="flex items-center space-x-2 text-sm">
+                                    <input type="checkbox" v-model="day4.task4" class="rounded">
+                                    <span :class="day4.task4 ? 'line-through text-text-light' : ''">
+                                        Final project handover
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Section -->
+            <div class="glass-card rounded-xl overflow-hidden">
+                <button @click="toggleSection('troubleshooting')" 
+                        :class="['w-full p-4 text-left accordion-trigger flex items-center justify-between', 
+                                 activeSection === 'troubleshooting' ? 'active' : 'hover:bg-laboratory/5']">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-wrench"></i>
+                        <span class="font-semibold">Troubleshooting</span>
+                    </div>
+                    <i :class="['fas fa-chevron-down transition-transform', 
+                               activeSection === 'troubleshooting' ? 'rotate-180' : '']"></i>
+                </button>
+                
+                <div :class="['accordion-content', activeSection === 'troubleshooting' ? 'active' : '']">
+                    <div class="p-4 pt-0 space-y-4">
+                        
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-warn mb-2">WiFi Connection Issues</h4>
+                            <div class="text-sm text-text-mid space-y-1">
+                                <p>• Check 2.4GHz network availability (ESP32 doesn't support 5GHz)</p>
+                                <p>• Verify SSID/password configuration</p>
+                                <p>• Test signal strength at installation location</p>
+                                <p>• Check firewall settings for IoT devices</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-warn mb-2">Sensor Reading Errors</h4>
+                            <div class="text-sm text-text-mid space-y-1">
+                                <p><strong>BME280 returns -999:</strong></p>
+                                <p>• Check I2C wiring (SDA/SCL correct?)</p>
+                                <p>• Verify 3.3V power supply stability</p>
+                                <p>• Test with known-good sensor</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <h4 class="font-semibold text-warn mb-2">Power Issues</h4>
+                            <div class="text-sm text-text-mid space-y-1">
+                                <p><strong>Short battery life (&lt;24 hours):</strong></p>
+                                <p>• Check deep sleep implementation</p>
+                                <p>• Verify current draw &lt;10mA in sleep</p>
+                                <p>• Test charging circuit LED indicators</p>
+                                <p>• Replace battery if capacity degraded</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-radium/5 rounded-lg p-4">
+                            <div class="flex items-start space-x-2">
+                                <i class="fas fa-phone text-radium mt-1"></i>
+                                <div>
+                                    <h4 class="font-semibold text-radium mb-1">Emergency Support</h4>
+                                    <p class="text-sm text-text-mid">
+                                        For urgent issues during deployment, contact Amit directly or 
+                                        check the troubleshooting videos recorded during Day 4.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Snake Grid -->
-        <main class="px-4 pb-8 max-w-7xl pt-8 mx-auto">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div 
-                    v-for="snake in snakes" 
-                    :key="snake.id"
-                    class="aspect-square bg-white rounded-xl overflow-hidden relative group cursor-pointer border border-polonium hover:border-radium/50 transition-all duration-300 subtle-shadow hover:shadow-lg"
-                    @click="openSnakeProfile(snake)"
-                >
-                    <!-- Background Media -->
-                    <div class="absolute inset-0">
-                        <div v-if="snake.media.videos.length > 0" class="h-full relative">
-                            <video 
-                                :src="snake.media.videos[0]" 
-                                loop 
-                                autoplay 
-                                playsinline 
-                                muted 
-                                class="object-cover w-full h-full"
-                            ></video>
-                            <div class="absolute top-3 right-3 z-20">
-                                <div class="w-3 h-3 bg-radium rounded-full live-pulse"></div>
-                            </div>
-                        </div>
-                        <div v-else-if="snake.media.images.length > 0" class="h-full relative">
-                            <img :src="snake.media.images[0]" class="object-cover w-full h-full" />
-                        </div>
-                        <div v-else class="camera-feed h-full flex items-center justify-center">
-                            <div class="text-center text-text-light">
-                                <i class="fas fa-image text-4xl mb-2 opacity-40"></i>
-                                <p class="text-sm opacity-60 font-medium">PHOTO COMING SOON</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Environmental overlay -->
-                    <div class="absolute inset-0 bg-gradient-to-t from-text-dark/80 via-transparent to-transparent">
-                        <div class="absolute top-3 left-3 glass-overlay rounded-lg px-3 py-1">
-                            <div class="flex items-center space-x-2 text-xs text-white">
-                                <span class="flex items-center">
-                                    <i class="fas fa-thermometer-half mr-1 text-radium"></i>
-                                    {{ snake.temperature }}°C
-                                </span>
-                                <span class="flex items-center">
-                                    <i class="fas fa-tint mr-1 text-uranium"></i>
-                                    {{ snake.humidity }}%
-                                </span>
-                                <span class="flex items-center">
-                                    <i class="fas fa-lightbulb mr-1 text-yellow-400"></i>
-                                    {{ snake.lightLevel }}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <!-- Snake info -->
-                        <div class="absolute bottom-0 left-0 right-0 p-4">
-                            <div class="glass-overlay rounded-lg p-3">
-                                <h3 class="text-lg font-bold text-white mb-1">{{ snake.name }}</h3>
-                                <p class="text-sm text-beige-cool">{{ snake.nickname }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Snake Profile Modal -->
-        <div v-if="selectedSnake" class="fixed inset-0 bg-text-dark/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4" @click="closeSnakeProfile">
-            <div class="bg-beige-warm rounded-t-xl sm:rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto slide-up" @click.stop>
-                
-                <!-- Media Gallery Header -->
-                <div class="relative">
-                    <!-- Media Carousel -->
-                    <div class="aspect-video relative overflow-hidden sm:rounded-t-xl">
-                        <!-- Video/Image Display -->
-                        <div v-if="selectedSnake.media.videos.length > 0 && currentMediaType === 'video'" class="h-full">
-                            <video 
-                                :src="selectedSnake.media.videos[currentMediaIndex]" 
-                                loop 
-                                autoplay 
-                                playsinline 
-                                muted 
-                                class="object-cover w-full h-full"
-                            ></video>
-                            <div class="absolute top-4 right-4">
-                                <div class="w-3 h-3 bg-radium rounded-full live-pulse"></div>
-                            </div>
-                        </div>
-                        
-                        <div v-else-if="selectedSnake.media.images.length > 0 && currentMediaType === 'image'" class="h-full">
-                            <img :src="selectedSnake.media.images[currentMediaIndex]" class="object-cover w-full h-full" />
-                        </div>
-                        
-                        <div v-else class="camera-feed h-full flex items-center justify-center">
-                            <div class="text-center text-text-mid">
-                                <i class="fas fa-image text-4xl mb-2 opacity-30"></i>
-                                <p class="text-sm opacity-60">No media available</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Media Controls -->
-                        <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between">
-                            <div class="flex space-x-2">
-                                <button v-if="selectedSnake.media.videos.length > 0" 
-                                        @click="switchMediaType('video')"
-                                        :class="['px-3 py-1 rounded text-xs font-medium transition-colors', currentMediaType === 'video' ? 'bg-radium text-white' : 'bg-white/20 text-white hover:bg-white/30']">
-                                    <i class="fas fa-video mr-1"></i>Feed
-                                </button>
-                                <button v-if="selectedSnake.media.images.length > 0"
-                                        @click="switchMediaType('image')"
-                                        :class="['px-3 py-1 rounded text-xs font-medium transition-colors', currentMediaType === 'image' ? 'bg-uranium text-white' : 'bg-white/20 text-white hover:bg-white/30']">
-                                    <i class="fas fa-camera mr-1"></i>Photos
-                                </button>
-                            </div>
-                            
-                            <!-- Navigation -->
-                            <div class="flex items-center space-x-2">
-                                <button @click="previousMedia" class="bg-white/20 hover:bg-white/30 text-white p-2 rounded">
-                                    <i class="fas fa-chevron-left text-xs"></i>
-                                </button>
-                                <span class="text-white text-xs bg-white/20 px-2 py-1 rounded">
-                                    {{ currentMediaIndex + 1 }} / {{ currentMediaArray.length }}
-                                </span>
-                                <button @click="nextMedia" class="bg-white/20 hover:bg-white/30 text-white p-2 rounded">
-                                    <i class="fas fa-chevron-right text-xs"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Snake Title Overlay -->
-                        <div class="absolute bottom-16 left-4">
-                            <div class="glass-overlay rounded-lg p-4">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
-                                        <h2 v-if="!editMode" class="text-xl font-bold text-white">{{ selectedSnake.name }}</h2>
-                                        <input v-else v-model="editData.name" class="text-xl font-bold text-white bg-transparent border-b border-white w-full outline-none">
-                                        
-                                        <p v-if="!editMode" class="text-beige-cool text-sm">{{ selectedSnake.nickname }}</p>
-                                        <input v-else v-model="editData.nickname" class="text-beige-cool text-sm bg-transparent border-b border-beige-cool/50 w-full mt-1 outline-none">
-                                        
-                                        <p v-if="!editMode" class="text-white/80 text-xs mt-1 italic">{{ selectedSnake.species }}</p>
-                                        <input v-else v-model="editData.species" class="text-white/80 text-xs mt-1 italic bg-transparent border-b border-white/30 w-full outline-none">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Close & Edit Buttons -->
-                        <div class="absolute top-4 right-4 flex space-x-2">
-                            <button v-if="adminMode" @click="toggleEditMode" 
-                                    :class="['p-2 rounded-lg transition-colors', editMode ? 'bg-radium text-white' : 'bg-white/20 text-white hover:bg-white/30']">
-                                <i :class="editMode ? 'fas fa-save' : 'fas fa-edit'" class="text-sm"></i>
-                            </button>
-                            
-                            <button @click="closeSnakeProfile" class="bg-white/20 hover:bg-white/30 text-white p-2 rounded-lg transition-colors">
-                                <i class="fas fa-times text-sm"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Modal Content -->
-                <div class="p-6 space-y-6">
-                    <!-- Sensor Network Map -->
-                    <div class="hidden">
-                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
-                            <i class="fas fa-network-wired mr-2 text-laboratory"></i>
-                            Sensor Network ({{ selectedSnake.sensorCount }} Points)
-                        </h3>
-                        
-                        <div class="bg-white rounded-lg border border-polonium p-6 relative overflow-hidden">
-                            <!-- Enclosure outline -->
-                            <div class="aspect-video border-2 border-text-light/30 rounded-lg relative bg-beige-cool/30">
-                                <!-- Sensor dots positioned around enclosure -->
-                                <div v-for="(sensor, index) in selectedSnake.sensors" :key="sensor.id" 
-                                     class="sensor-dot absolute"
-                                     :class="getSensorColor(sensor.type)"
-                                     :style="getSensorPosition(index, selectedSnake.sensors.length)"
-                                     :title="`${sensor.type}: ${sensor.value}${sensor.unit} at ${sensor.location}`">
-                                </div>
-                                
-                                <!-- Legend -->
-                                <div class="absolute bottom-2 left-2 right-2 bg-white/90 rounded p-2">
-                                    <div class="grid grid-cols-3 gap-2 text-xs">
-                                        <div class="flex items-center space-x-1">
-                                            <div class="w-2 h-2 bg-radium rounded-full"></div>
-                                            <span>Temperature</span>
-                                        </div>
-                                        <div class="flex items-center space-x-1">
-                                            <div class="w-2 h-2 bg-uranium rounded-full"></div>
-                                            <span>Humidity</span>
-                                        </div>
-                                        <div class="flex items-center space-x-1">
-                                            <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                            <span>Light</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Environmental Grid -->
+        <!-- Floating Action Button -->
+        <div class="floating-total">
+            <div class="px-4 sm:px-6">
+                <div class="glass-card rounded-xl p-4 flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
-                            <i class="fas fa-thermometer-quarter mr-2 text-laboratory"></i>
-                            Environmental Parameters
-                        </h3>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <!-- Temperature -->
-                            <div class="bg-white rounded-lg border border-polonium p-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-thermometer-half mr-2 text-radium"></i>
-                                        <span class="font-bold text-text-dark text-sm">TEMP</span>
-                                    </div>
-                                    <span class="text-lg font-bold text-radium">{{ selectedSnake.temperature }}°C</span>
-                                </div>
-                                
-                                <div class="relative h-2 bg-beige-cool rounded-full overflow-hidden">
-                                    <div class="absolute h-full bg-laboratory/30 rounded-full" 
-                                         :style="`left: ${((selectedSnake.idealTemp.min + 5)/50)*100}%; width: ${((selectedSnake.idealTemp.max - selectedSnake.idealTemp.min)/50)*100}%`">
-                                    </div>
-                                    <div class="absolute top-0 h-full w-1 bg-radium rounded-full" 
-                                         :style="`left: ${((selectedSnake.temperature + 5)/50)*100}%`">
-                                    </div>
-                                </div>
-                                
-                                <div class="text-xs text-text-mid mt-2">
-                                    Range: {{ selectedSnake.idealTemp.min }}-{{ selectedSnake.idealTemp.max }}°C
-                                </div>
-                            </div>
-                            
-                            <!-- Humidity -->
-                            <div class="bg-white rounded-lg border border-polonium p-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-tint mr-2 text-uranium"></i>
-                                        <span class="font-bold text-text-dark text-sm">HUMIDITY</span>
-                                    </div>
-                                    <span class="text-lg font-bold text-uranium">{{ selectedSnake.humidity }}%</span>
-                                </div>
-                                
-                                <div class="relative h-2 bg-beige-cool rounded-full overflow-hidden">
-                                    <div class="absolute h-full bg-uranium/30 rounded-full" 
-                                         :style="`left: ${selectedSnake.idealHumidity.min}%; width: ${selectedSnake.idealHumidity.max - selectedSnake.idealHumidity.min}%`">
-                                    </div>
-                                    <div class="absolute top-0 h-full w-1 bg-uranium rounded-full" 
-                                         :style="`left: ${selectedSnake.humidity}%`">
-                                    </div>
-                                </div>
-                                
-                                <div class="text-xs text-text-mid mt-2">
-                                    Range: {{ selectedSnake.idealHumidity.min }}-{{ selectedSnake.idealHumidity.max }}%
-                                </div>
-                            </div>
-                            
-                            <!-- Light Level -->
-                            <div class="bg-white rounded-lg border border-polonium p-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center">
-                                        <i class="fas fa-lightbulb mr-2 text-yellow-500"></i>
-                                        <span class="font-bold text-text-dark text-sm">LIGHT</span>
-                                    </div>
-                                    <span class="text-lg font-bold text-yellow-600">{{ selectedSnake.lightLevel }}</span>
-                                </div>
-                                
-                                <div class="relative h-2 bg-beige-cool rounded-full overflow-hidden">
-                                    <div class="absolute h-full bg-yellow-400/30 rounded-full" 
-                                         :style="`left: ${(selectedSnake.idealLight.min/2000)*100}%; width: ${((selectedSnake.idealLight.max - selectedSnake.idealLight.min)/2000)*100}%`">
-                                    </div>
-                                    <div class="absolute top-0 h-full w-1 bg-yellow-500 rounded-full" 
-                                         :style="`left: ${(selectedSnake.lightLevel/2000)*100}%`">
-                                    </div>
-                                </div>
-                                
-                                <div class="text-xs text-text-mid mt-2">
-                                    Range: {{ selectedSnake.idealLight.min }}-{{ selectedSnake.idealLight.max }} lux
-                                </div>
-                            </div>
-                        </div>
+                        <div class="text-lg font-bold text-text-dark">Total: ₹8,154</div>
+                        <div class="text-sm text-text-mid">For 3 complete rockpods</div>
                     </div>
-                    
-                    <!-- Lighting Control System -->
-                    <div>
-                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
-                            <i class="fas fa-sun mr-2 text-laboratory"></i>
-                            Automated Lighting Cycle
-                        </h3>
-                        
-                        <div class="bg-white rounded-lg border border-polonium p-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="text-sm font-medium text-text-dark">{{ selectedSnake.species.split('(')[0].trim() }} Cycle</span>
-                                <div class="flex items-center space-x-2">
-                                    <div :class="['w-3 h-3 rounded-full', selectedSnake.lightingCycle.active ? 'bg-laboratory animate-pulse' : 'bg-text-light']"></div>
-                                    <span class="text-xs text-text-mid">{{ selectedSnake.lightingCycle.active ? 'ACTIVE' : 'MANUAL' }}</span>
-                                </div>
-                            </div>
-                            
-                            <!-- Light sources -->
-                            <div class="space-y-3">
-                                <div v-for="light in selectedSnake.lightingCycle.lights" :key="light.id" 
-                                     class="flex items-center justify-between p-3 bg-beige-cool/50 rounded-lg">
-                                    <div class="flex items-center space-x-3">
-                                        <i :class="light.icon" :class="light.active ? 'text-yellow-500' : 'text-text-light'"></i>
-                                        <div>
-                                            <div class="text-sm font-medium text-text-dark">{{ light.name }}</div>
-                                            <div class="text-xs text-text-mid">{{ light.schedule }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center space-x-2">
-                                        <div :class="['w-8 h-4 rounded-full border border-text-light', light.active ? 'bg-laboratory' : 'bg-text-light']">
-                                            <div :class="['w-3 h-3 bg-white rounded-full transition-transform', light.active ? 'translate-x-4' : 'translate-x-0']"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Research Notes -->
-                    <div>
-                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
-                            <i class="fas fa-book-open mr-2 text-laboratory"></i>
-                            Research Documentation
-                        </h3>
-                        <div class="bg-white rounded-lg border border-polonium p-4">
-                            <p v-if="!editMode" class="text-sm text-text-dark leading-relaxed">{{ selectedSnake.story }}</p>
-                            <textarea v-else v-model="editData.story" class="w-full text-sm text-text-dark leading-relaxed bg-transparent border border-polonium rounded p-2 resize-none" rows="4"></textarea>
-                        </div>
-                    </div>
-                    
-                    <!-- Care Protocol -->
-                    <div>
-                        <h3 class="text-lg font-bold mb-3 flex items-center text-text-dark uppercase tracking-wide">
-                            <i class="fas fa-calendar-alt mr-2 text-laboratory"></i>
-                            Care Protocol
-                        </h3>
-                        
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div class="bg-white rounded-lg border border-polonium p-4 text-center">
-                                <i class="fas fa-utensils text-radium text-lg mb-2"></i>
-                                <div class="text-xs text-text-mid uppercase tracking-wide mb-1">Last Meal</div>
-                                <div v-if="!editMode" class="text-sm font-bold text-text-dark">{{ selectedSnake.lastMeal }}</div>
-                                <input v-else v-model="editData.lastMeal" class="text-sm font-bold text-text-dark w-full text-center border-b border-radium outline-none">
-                            </div>
-                            
-                            <div class="bg-white rounded-lg border border-polonium p-4 text-center">
-                                <i class="fas fa-broom text-uranium text-lg mb-2"></i>
-                                <div class="text-xs text-text-mid uppercase tracking-wide mb-1">Cleaned</div>
-                                <div v-if="!editMode" class="text-sm font-bold text-text-dark">{{ selectedSnake.lastCleaning }}</div>
-                                <input v-else v-model="editData.lastCleaning" class="text-sm font-bold text-text-dark w-full text-center border-b border-uranium outline-none">
-                            </div>
-                            
-                            <div class="bg-white rounded-lg border border-polonium p-4 text-center">
-                                <i class="fas fa-stethoscope text-laboratory text-lg mb-2"></i>
-                                <div class="text-xs text-text-mid uppercase tracking-wide mb-1">Check-up</div>
-                                <div v-if="!editMode" class="text-sm font-bold text-text-dark">{{ selectedSnake.nextCheckup }}</div>
-                                <input v-else v-model="editData.nextCheckup" class="text-sm font-bold text-text-dark w-full text-center border-b border-laboratory outline-none">
-                            </div>
-                        </div>
-                    </div>
+                    <button @click="scrollToSection('bom')" 
+                            class="buy-button text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all">
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        Order Now
+                    </button>
                 </div>
             </div>
         </div>
@@ -525,432 +865,56 @@
         createApp({
             data() {
                 return {
-                    currentTime: '',
-                    selectedSnake: null,
-                    adminMode: false,
-                    adminDropdownOpen: false,
-                    editMode: false,
-                    editData: {},
-                    currentMediaType: 'video',
-                    currentMediaIndex: 0,
-                    snakes: [
-                        {
-                            id: 'aragon',
-                            name: 'Aragon',
-                            nickname: 'The Gentle Giant',
-                            species: 'Ophiophagus hannah (King Cobra)',
-                            temperature: 28.5,
-                            humidity: 75,
-                            lightLevel: 450,
-                            sensorCount: 10,
-                            age: '3-4 years',
-                            lastMeal: '3 days ago',
-                            lastCleaning: '2 days ago',
-                            nextCheckup: 'Next week',
-                            story: 'Aragon came to us as part of our venom research program with IISc. Despite being one of the world\'s most venomous snakes, he has adapted well to his environment and plays a crucial role in developing life-saving antivenom.',
-                            idealTemp: { min: 15, max: 35 },
-                            idealHumidity: { min: 30, max: 100 },
-                            idealLight: { min: 200, max: 800 },
-                            media: {
-                                videos: ['videos/OpKaKa.mp4'],
-                                images: ['images/OpKaKa01.jpg', 'images/OpKaKa02.jpg']
-                            },
-                            lightingCycle: {
-                                active: true,
-                                lights: [
-                                    { id: 'heat1', name: 'Basking Heat Lamp', schedule: '6:00 AM - 6:00 PM', intensity: 75, active: true, icon: 'fas fa-sun' },
-                                    { id: 'uv1', name: 'UV-B Lamp', schedule: '7:00 AM - 5:00 PM', intensity: 60, active: true, icon: 'fas fa-radiation' },
-                                    { id: 'ambient1', name: 'Ambient LED', schedule: '24/7', intensity: 30, active: true, icon: 'fas fa-lightbulb' },
-                                    { id: 'night1', name: 'Night Vision', schedule: '6:00 PM - 6:00 AM', intensity: 10, active: false, icon: 'fas fa-moon' }
-                                ]
-                            },
-                            sensors: [
-                                { id: 'T001', type: 'temperature', value: 29.2, unit: '°C', location: 'Basking Area' },
-                                { id: 'T002', type: 'temperature', value: 26.8, unit: '°C', location: 'Cool Side' },
-                                { id: 'T003', type: 'temperature', value: 25.1, unit: '°C', location: 'Hide Box' },
-                                { id: 'H001', type: 'humidity', value: 78, unit: '%', location: 'Basking Area' },
-                                { id: 'H002', type: 'humidity', value: 82, unit: '%', location: 'Water Bowl' },
-                                { id: 'H003', type: 'humidity', value: 75, unit: '%', location: 'Hide Box' },
-                                { id: 'L001', type: 'light', value: 520, unit: 'lux', location: 'Basking Spot' },
-                                { id: 'L002', type: 'light', value: 180, unit: 'lux', location: 'Shaded Area' },
-                                { id: 'L003', type: 'light', value: 45, unit: 'lux', location: 'Hide Box' },
-                                { id: 'M001', type: 'motion', value: 'Active', unit: '', location: 'General' }
-                            ]
-                        },
-                        {
-                            id: 'priya',
-                            name: 'Priya',
-                            nickname: 'The Survivor',
-                            species: 'Naja naja (Spectacled Cobra)',
-                            temperature: 24.2,
-                            humidity: 82,
-                            lightLevel: 320,
-                            sensorCount: 6,
-                            age: '2-3 years',
-                            lastMeal: '5 days ago',
-                            lastCleaning: 'Yesterday',
-                            nextCheckup: 'This weekend',
-                            story: 'Priya was rescued from a human-snake conflict situation. She has shown remarkable resilience and her case study helps us develop better conflict resolution protocols.',
-                            idealTemp: { min: 20, max: 35 },
-                            idealHumidity: { min: 20, max: 80 },
-                            idealLight: { min: 150, max: 600 },
-                            media: {
-                                videos: ['videos/EcCaKa.mp4'],
-                                images: ['images/EcCaKa01.jpg', 'images/EcCaKa02.jpg', 'images/EcCaKa03.jpg', 'images/EcCaKa04.jpg']
-                            },
-                            lightingCycle: {
-                                active: true,
-                                lights: [
-                                    { id: 'heat2', name: 'Ceramic Heat Emitter', schedule: '24/7', intensity: 40, active: true, icon: 'fas fa-fire' },
-                                    { id: 'day2', name: 'Daylight LED', schedule: '6:00 AM - 6:00 PM', intensity: 50, active: true, icon: 'fas fa-sun' },
-                                    { id: 'night2', name: 'Red Night Light', schedule: '6:00 PM - 6:00 AM', intensity: 15, active: false, icon: 'fas fa-moon' }
-                                ]
-                            },
-                            sensors: [
-                                { id: 'T004', type: 'temperature', value: 25.1, unit: '°C', location: 'Warm Side' },
-                                { id: 'T005', type: 'temperature', value: 22.8, unit: '°C', location: 'Cool Side' },
-                                { id: 'H004', type: 'humidity', value: 85, unit: '%', location: 'Water Area' },
-                                { id: 'H005', type: 'humidity', value: 78, unit: '%', location: 'Hide Box' },
-                                { id: 'L004', type: 'light', value: 340, unit: 'lux', location: 'Basking' },
-                                { id: 'L005', type: 'light', value: 120, unit: 'lux', location: 'Retreat' }
-                            ]
-                        },
-                        {
-                            id: 'ravi',
-                            name: 'Ravi',
-                            nickname: 'The Ambassador',
-                            species: 'Ptyas mucosa (Oriental Rat Snake)',
-                            temperature: 27.1,
-                            humidity: 65,
-                            lightLevel: 380,
-                            sensorCount: 4,
-                            age: '1-2 years',
-                            lastMeal: '4 days ago',
-                            lastCleaning: '3 days ago',
-                            nextCheckup: 'Next week',
-                            story: 'Ravi serves as our primary education ambassador, visiting schools and community centers. His calm demeanor makes him perfect for public outreach and education programs.',
-                            idealTemp: { min: 20, max: 40 },
-                            idealHumidity: { min: 20, max: 60 },
-                            idealLight: { min: 200, max: 700 },
-                            media: {
-                                videos: [],
-                                images: ['images/DaRuKa01.jpg', 'images/DaRuKa02.jpg']
-                            },
-                            lightingCycle: {
-                                active: false,
-                                lights: [
-                                    { id: 'heat3', name: 'Heat Pad', schedule: 'Manual', intensity: 0, active: false, icon: 'fas fa-square' },
-                                    { id: 'room3', name: 'Room Light', schedule: 'Manual', intensity: 100, active: true, icon: 'fas fa-lightbulb' }
-                                ]
-                            },
-                            sensors: [
-                                { id: 'T006', type: 'temperature', value: 27.8, unit: '°C', location: 'Center' },
-                                { id: 'H006', type: 'humidity', value: 68, unit: '%', location: 'Center' },
-                                { id: 'L006', type: 'light', value: 420, unit: 'lux', location: 'Ambient' },
-                                { id: 'M002', type: 'motion', value: 'Moderate', unit: '', location: 'General' }
-                            ]
-                        },
-                        {
-                            id: 'kala',
-                            name: 'Kala',
-                            nickname: 'The Mysterious',
-                            species: 'Bungarus caeruleus (Common Krait)',
-                            temperature: 22.8,
-                            humidity: 45,
-                            lightLevel: 80,
-                            sensorCount: 8,
-                            age: 'Unknown',
-                            lastMeal: '7 days ago',
-                            lastCleaning: 'Yesterday',
-                            nextCheckup: 'Tomorrow',
-                            story: 'Kala is our newest resident, still adjusting to her environment. As a nocturnal species, she requires specialized monitoring to ensure proper adaptation.',
-                            idealTemp: { min: 15, max: 35 },
-                            idealHumidity: { min: 30, max: 80 },
-                            idealLight: { min: 10, max: 200 },
-                            media: {
-                                videos: ['videos/CrMlKa.mp4'],
-                                images: ['images/CrMlKa01.jpg', 'images/CrMlKa02.jpg', 'images/CrMlKa03.jpg']
-                            },
-                            lightingCycle: {
-                                active: true,
-                                lights: [
-                                    { id: 'heat4', name: 'Under Tank Heater', schedule: '24/7', intensity: 30, active: true, icon: 'fas fa-fire' },
-                                    { id: 'dim4', name: 'Dim Red Light', schedule: '24/7', intensity: 5, active: true, icon: 'fas fa-circle' },
-                                    { id: 'night4', name: 'Night Vision IR', schedule: '6:00 PM - 6:00 AM', intensity: 20, active: true, icon: 'fas fa-eye' }
-                                ]
-                            },
-                            sensors: [
-                                { id: 'T007', type: 'temperature', value: 24.1, unit: '°C', location: 'Warm Side' },
-                                { id: 'T008', type: 'temperature', value: 21.2, unit: '°C', location: 'Cool Side' },
-                                { id: 'T009', type: 'temperature', value: 19.8, unit: '°C', location: 'Hide Box' },
-                                { id: 'H007', type: 'humidity', value: 48, unit: '%', location: 'Warm Side' },
-                                { id: 'H008', type: 'humidity', value: 52, unit: '%', location: 'Cool Side' },
-                                { id: 'L007', type: 'light', value: 85, unit: 'lux', location: 'Basking' },
-                                { id: 'L008', type: 'light', value: 25, unit: 'lux', location: 'Hide' },
-                                { id: 'M003', type: 'motion', value: 'Low', unit: '', location: 'General' }
-                            ]
-                        },
-                        {
-                            id: 'lila-maya',
-                            name: 'Lila & Maya',
-                            nickname: 'The Duo',
-                            species: 'Boiga forsteni (Forsten\'s Cat Snake)',
-                            temperature: 26.3,
-                            humidity: 78,
-                            lightLevel: 220,
-                            sensorCount: 6,
-                            age: '2-3 years',
-                            lastMeal: '2 days ago',
-                            lastCleaning: 'Yesterday',
-                            nextCheckup: 'This week',
-                            story: 'This bonded pair is part of our conservation breeding program. Their arboreal habitat setup serves as a model for other institutions working with similar species.',
-                            idealTemp: { min: 20, max: 30 },
-                            idealHumidity: { min: 30, max: 100 },
-                            idealLight: { min: 100, max: 500 },
-                            media: {
-                                videos: ['videos/HyHyKa.mp4'],
-                                images: ['images/HyHyKa01.jpg', 'images/HyHyKa02.jpg', 'images/HyHyKa03.jpg']
-                            },
-                            lightingCycle: {
-                                active: true,
-                                lights: [
-                                    { id: 'heat5', name: 'Canopy Heater', schedule: '6:00 AM - 8:00 PM', intensity: 55, active: true, icon: 'fas fa-sun' },
-                                    { id: 'uv5', name: 'UV-A/B Combo', schedule: '8:00 AM - 6:00 PM', intensity: 70, active: true, icon: 'fas fa-radiation' },
-                                    { id: 'mist5', name: 'Misting Light', schedule: 'Auto with humidity', intensity: 25, active: false, icon: 'fas fa-tint' }
-                                ]
-                            },
-                            sensors: [
-                                { id: 'T010', type: 'temperature', value: 27.5, unit: '°C', location: 'Canopy' },
-                                { id: 'T011', type: 'temperature', value: 24.8, unit: '°C', location: 'Mid Level' },
-                                { id: 'H009', type: 'humidity', value: 80, unit: '%', location: 'Substrate' },
-                                { id: 'H010', type: 'humidity', value: 75, unit: '%', location: 'Canopy' },
-                                { id: 'L009', type: 'light', value: 240, unit: 'lux', location: 'Branch Level' },
-                                { id: 'L010', type: 'light', value: 150, unit: 'lux', location: 'Ground' }
-                            ]
-                        },
-                        {
-                            id: 'vikram',
-                            name: 'Vikram',
-                            nickname: 'The Veteran',
-                            species: 'Daboia russelii (Russell\'s Viper)',
-                            temperature: 29.1,
-                            humidity: 55,
-                            lightLevel: 580,
-                            sensorCount: 8,
-                            age: '4-5 years',
-                            lastMeal: '6 days ago',
-                            lastCleaning: '2 days ago',
-                            nextCheckup: 'This week',
-                            story: 'Vikram is one of our senior residents contributing to anti-venom research. His extensive participation in research programs has contributed significantly to medical advances.',
-                            idealTemp: { min: 20, max: 40 },
-                            idealHumidity: { min: 20, max: 80 },
-                            idealLight: { min: 300, max: 900 },
-                            media: {
-                                videos: ['videos/DaRuKa.mp4'],
-                                images: ['images/DaRuKa01.jpg', 'images/DaRuKa02.jpg', 'images/DaRuKa03.jpg', 'images/DaRuKa04.jpg', 'images/DaRuKa05.jpg', 'images/DaRuKa06.jpg']
-                            },
-                            lightingCycle: {
-                                active: true,
-                                lights: [
-                                    { id: 'heat6', name: 'Primary Heat Lamp', schedule: '7:00 AM - 7:00 PM', intensity: 80, active: true, icon: 'fas fa-sun' },
-                                    { id: 'heat7', name: 'Secondary Heat', schedule: '24/7', intensity: 35, active: true, icon: 'fas fa-fire' },
-                                    { id: 'day6', name: 'Full Spectrum LED', schedule: '6:00 AM - 6:00 PM', intensity: 65, active: true, icon: 'fas fa-lightbulb' },
-                                    { id: 'night6', name: 'Infrared Camera Light', schedule: '6:00 PM - 6:00 AM', intensity: 20, active: false, icon: 'fas fa-video' }
-                                ]
-                            },
-                            sensors: [
-                                { id: 'T012', type: 'temperature', value: 31.2, unit: '°C', location: 'Primary Basking' },
-                                { id: 'T013', type: 'temperature', value: 28.5, unit: '°C', location: 'Secondary Basking' },
-                                { id: 'T014', type: 'temperature', value: 25.8, unit: '°C', location: 'Cool Retreat' },
-                                { id: 'H011', type: 'humidity', value: 58, unit: '%', location: 'Warm Side' },
-                                { id: 'H012', type: 'humidity', value: 52, unit: '%', location: 'Cool Side' },
-                                { id: 'L011', type: 'light', value: 620, unit: 'lux', location: 'Primary Basking' },
-                                { id: 'L012', type: 'light', value: 380, unit: 'lux', location: 'Secondary' },
-                                { id: 'L013', type: 'light', value: 180, unit: 'lux', location: 'Shade' }
-                            ]
-                        }
-                    ]
+                    activeSection: 'overview',
+                    day1: { task1: false, task2: false, task3: false, task4: false },
+                    day2: { task1: false, task2: false, task3: false, task4: false },
+                    day3: { task1: false, task2: false, task3: false, task4: false },
+                    day4: { task1: false, task2: false, task3: false, task4: false }
                 }
             },
             computed: {
-                totalSnakes() {
-                    return this.snakes.length;
-                },
-                activeFeeds() {
-                    return this.snakes.filter(s => s.media.videos.length > 0).length;
-                },
-                averageTemp() {
-                    const total = this.snakes.reduce((sum, s) => sum + s.temperature, 0);
-                    return Math.round(total / this.snakes.length * 10) / 10;
-                },
-                averageHumidity() {
-                    const total = this.snakes.reduce((sum, s) => sum + s.humidity, 0);
-                    return Math.round(total / this.snakes.length);
-                },
-                currentMediaArray() {
-                    if (!this.selectedSnake) return [];
-                    return this.currentMediaType === 'video' ? 
-                           this.selectedSnake.media.videos : 
-                           this.selectedSnake.media.images;
+                totalProgress() {
+                    const allTasks = [...Object.values(this.day1), ...Object.values(this.day2), 
+                                   ...Object.values(this.day3), ...Object.values(this.day4)];
+                    const completed = allTasks.filter(Boolean).length;
+                    return Math.round((completed / allTasks.length) * 100);
                 }
             },
             methods: {
-                updateTime() {
-                    const now = new Date();
-                    this.currentTime = now.toLocaleTimeString('en-IN', { 
-                        timeZone: 'Asia/Kolkata',
-                        hour12: false,
-                        hour: 'numeric',
-                        minute: '2-digit'
-                    });
+                toggleSection(section) {
+                    this.activeSection = this.activeSection === section ? '' : section;
                 },
-                toggleAdminDropdown() {
-                    this.adminDropdownOpen = !this.adminDropdownOpen;
+                scrollToSection(section) {
+                    this.activeSection = section;
+                    setTimeout(() => {
+                        const element = document.querySelector(`[data-section="${section}"]`);
+                        if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 100);
                 },
-                toggleAdminMode() {
-                    this.adminMode = !this.adminMode;
-                    this.adminDropdownOpen = false;
-                    this.editMode = false;
-                },
-                toggleEditMode() {
-                    if (this.editMode) {
-                        Object.assign(this.selectedSnake, this.editData);
-                        this.editMode = false;
-                    } else {
-                        this.editData = JSON.parse(JSON.stringify(this.selectedSnake));
-                        this.editMode = true;
-                    }
-                },
-                addNewSnake() {
-                    const newSnake = {
-                        id: 'new_' + Date.now(),
-                        name: 'New Resident',
-                        nickname: 'The Newcomer',
-                        species: 'Species (Scientific name)',
-                        temperature: 25.0,
-                        humidity: 60,
-                        lightLevel: 300,
-                        sensorCount: 2,
-                        age: 'Unknown',
-                        lastMeal: 'Not recorded',
-                        lastCleaning: 'Today',
-                        nextCheckup: 'TBD',
-                        story: 'Add research notes and observations here...',
-                        idealTemp: { min: 20, max: 35 },
-                        idealHumidity: { min: 30, max: 70 },
-                        idealLight: { min: 200, max: 600 },
-                        media: { videos: [], images: [] },
-                        lightingCycle: {
-                            active: false,
-                            lights: [
-                                { id: 'heat_new', name: 'Heat Source', schedule: 'Manual', intensity: 0, active: false, icon: 'fas fa-fire' }
-                            ]
-                        },
-                        sensors: [
-                            { id: 'T_new1', type: 'temperature', value: 25, unit: '°C', location: 'Point 1' },
-                            { id: 'H_new1', type: 'humidity', value: 60, unit: '%', location: 'Point 1' }
-                        ]
-                    };
-                    this.snakes.push(newSnake);
-                    this.adminDropdownOpen = false;
-                },
-                openSnakeProfile(snake) {
-                    this.selectedSnake = snake;
-                    this.editMode = false;
-                    this.currentMediaType = snake.media.videos.length > 0 ? 'video' : 'image';
-                    this.currentMediaIndex = 0;
-                    document.body.style.overflow = 'hidden';
-                },
-                closeSnakeProfile() {
-                    this.selectedSnake = null;
-                    this.editMode = false;
-                    document.body.style.overflow = 'auto';
-                },
-                switchMediaType(type) {
-                    this.currentMediaType = type;
-                    this.currentMediaIndex = 0;
-                },
-                nextMedia() {
-                    if (this.currentMediaIndex < this.currentMediaArray.length - 1) {
-                        this.currentMediaIndex++;
-                    } else {
-                        this.currentMediaIndex = 0;
-                    }
-                },
-                previousMedia() {
-                    if (this.currentMediaIndex > 0) {
-                        this.currentMediaIndex--;
-                    } else {
-                        this.currentMediaIndex = this.currentMediaArray.length - 1;
-                    }
-                },
-                getSensorColor(type) {
-                    switch(type) {
-                        case 'temperature': return 'bg-radium';
-                        case 'humidity': return 'bg-uranium';
-                        case 'light': return 'bg-yellow-500';
-                        case 'motion': return 'bg-laboratory';
-                        default: return 'bg-text-light';
-                    }
-                },
-                getSensorPosition(index, total) {
-                    const angle = (index / total) * 2 * Math.PI;
-                    const radius = 40; // percentage from center
-                    const centerX = 50;
-                    const centerY = 50;
-                    
-                    const x = centerX + radius * Math.cos(angle);
-                    const y = centerY + radius * Math.sin(angle);
-                    
-                    return {
-                        left: `${x}%`,
-                        top: `${y}%`,
-                        transform: 'translate(-50%, -50%)'
-                    };
+                saveProgress() {
+                    localStorage.setItem('rockpod-progress', JSON.stringify({
+                        day1: this.day1, day2: this.day2, day3: this.day3, day4: this.day4
+                    }));
                 }
             },
+            watch: {
+                day1: { handler() { this.saveProgress(); }, deep: true },
+                day2: { handler() { this.saveProgress(); }, deep: true },
+                day3: { handler() { this.saveProgress(); }, deep: true },
+                day4: { handler() { this.saveProgress(); }, deep: true }
+            },
             mounted() {
-                this.updateTime();
-                setInterval(this.updateTime, 1000);
-                
-                // Real-time environmental simulation
-                setInterval(() => {
-                    this.snakes.forEach(snake => {
-                        const tempVariation = (Math.random() - 0.5) * 0.3;
-                        const humidVariation = (Math.random() - 0.5) * 2;
-                        const lightVariation = (Math.random() - 0.5) * 10;
-                        
-                        snake.temperature = Math.round((snake.temperature + tempVariation) * 10) / 10;
-                        snake.humidity = Math.round((snake.humidity + humidVariation));
-                        snake.lightLevel = Math.round(snake.lightLevel + lightVariation);
-                        
-                        // Keep within realistic bounds
-                        snake.temperature = Math.max(10, Math.min(45, snake.temperature));
-                        snake.humidity = Math.max(10, Math.min(100, snake.humidity));
-                        snake.lightLevel = Math.max(0, Math.min(1000, snake.lightLevel));
-                        
-                        // Update sensor values too
-                        snake.sensors.forEach(sensor => {
-                            if (sensor.type === 'temperature') {
-                                sensor.value = Math.round((sensor.value + (Math.random() - 0.5) * 0.2) * 10) / 10;
-                                sensor.value = Math.max(10, Math.min(45, sensor.value));
-                            } else if (sensor.type === 'humidity') {
-                                sensor.value = Math.round(sensor.value + (Math.random() - 0.5) * 1);
-                                sensor.value = Math.max(10, Math.min(100, sensor.value));
-                            } else if (sensor.type === 'light') {
-                                sensor.value = Math.round(sensor.value + (Math.random() - 0.5) * 5);
-                                sensor.value = Math.max(0, Math.min(1000, sensor.value));
-                            }
-                        });
-                    });
-                }, 8000);
-                
-                // Close dropdowns when clicking outside
-                document.addEventListener('click', (e) => {
-                    if (!e.target.closest('.relative')) {
-                        this.adminDropdownOpen = false;
-                    }
-                });
+                // Load saved progress
+                const saved = localStorage.getItem('rockpod-progress');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    Object.assign(this.day1, data.day1 || {});
+                    Object.assign(this.day2, data.day2 || {});
+                    Object.assign(this.day3, data.day3 || {});
+                    Object.assign(this.day4, data.day4 || {});
+                }
             }
         }).mount('#app');
     </script>

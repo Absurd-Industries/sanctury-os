@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanctuary Management | The Liana Trust</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://kit.fontawesome.com/e0c6d65845.js" crossorigin="anonymous"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'radium': '#FF6B35',
+                        'laboratory': '#2A5F41',
+                        'uranium': '#8B9A46',
+                        'polonium': '#D4A574',
+                        'beige-warm': '#F5F0E8',
+                        'beige-cool': '#E8E2D4',
+                        'text-dark': '#2D2D2D',
+                        'text-mid': '#6B6B6B',
+                        'text-light': '#9B9B9B',
+                        'critical': '#DC2626',
+                        'warning': '#F59E0B',
+                        'success': '#059669'
+                    },
+                    fontFamily: {
+                        'rubik': ['Rubik', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Rubik', system-ui, sans-serif;
+        }
+        
+        .critical-pulse {
+            animation: criticalPulse 1s infinite;
+        }
+        
+        @keyframes criticalPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        
+        .status-badge {
+            transition: all 0.2s ease;
+        }
+        
+        .table-row:hover {
+            background-color: rgba(42, 95, 65, 0.05);
+            transform: translateX(2px);
+            transition: all 0.2s ease;
+        }
+        
+        .qr-hover:hover {
+            transform: scale(1.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .filter-active {
+            background: linear-gradient(45deg, #2A5F41, #8B9A46);
+            color: white;
+        }
+        
+        .notification-slide {
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+
+<body class="bg-beige-cool font-rubik text-text-dark min-h-screen">
+    <div id="app">
+        <!-- Header -->
+        <header class="bg-beige-warm border-b-2 border-polonium p-4 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-laboratory rounded-lg flex items-center justify-center">
+                        <i class="fas fa-snake text-beige-warm text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-text-dark uppercase tracking-wide">SANCTUARY MANAGEMENT</h1>
+                        <p class="text-xs text-text-mid uppercase tracking-wider">The Liana Trust - Care Dashboard</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Quick Stats -->
+                    <div class="hidden lg:flex items-center space-x-6 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-critical rounded-full critical-pulse"></div>
+                            <span class="font-medium text-critical">{{ criticalCount }} Critical</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-warning rounded-full"></div>
+                            <span class="font-medium text-warning">{{ needsAttentionCount }} Attention</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-success rounded-full"></div>
+                            <span class="font-medium text-success">{{ healthyCount }} Healthy</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Current Time -->
+                    <div class="text-right text-sm">
+                        <div class="font-bold text-text-dark">{{ currentTime }}</div>
+                        <div class="text-xs text-text-mid">{{ currentDate }}</div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Filters & Search -->
+        <div class="max-w-7xl mx-auto p-6">
+            <div class="bg-white rounded-xl border border-polonium p-4 mb-6 shadow-sm">
+                <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                    <!-- Search -->
+                    <div class="flex-1 max-w-md">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-text-mid"></i>
+                            <input 
+                                v-model="searchQuery" 
+                                type="text" 
+                                placeholder="Search by ID, species, or notes..."
+                                class="w-full pl-10 pr-4 py-2 border border-polonium rounded-lg focus:outline-none focus:ring-2 focus:ring-laboratory/50"
+                            >
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Buttons -->
+                    <div class="flex flex-wrap gap-2">
+                        <button 
+                            @click="setFilter('all')" 
+                            :class="['px-3 py-1 rounded-full text-sm font-medium transition-all', currentFilter === 'all' ? 'filter-active' : 'bg-beige-cool text-text-dark hover:bg-polonium/30']"
+                        >
+                            All ({{ filteredSnakes.length }})
+                        </button>
+                        <button 
+                            @click="setFilter('critical')" 
+                            :class="['px-3 py-1 rounded-full text-sm font-medium transition-all', currentFilter === 'critical' ? 'bg-critical text-white' : 'bg-beige-cool text-text-dark hover:bg-critical/20']"
+                        >
+                            Critical ({{ criticalCount }})
+                        </button>
+                        <button 
+                            @click="setFilter('feeding')" 
+                            :class="['px-3 py-1 rounded-full text-sm font-medium transition-all', currentFilter === 'feeding' ? 'bg-warning text-white' : 'bg-beige-cool text-text-dark hover:bg-warning/20']"
+                        >
+                            Feeding Due ({{ feedingDueCount }})
+                        </button>
+                        <button 
+                            @click="setFilter('medical')" 
+                            :class="['px-3 py-1 rounded-full text-sm font-medium transition-all', currentFilter === 'medical' ? 'bg-uranium text-white' : 'bg-beige-cool text-text-dark hover:bg-uranium/20']"
+                        >
+                            Medical Due ({{ medicalDueCount }})
+                        </button>
+                        <button 
+                            @click="setFilter('eggs')" 
+                            :class="['px-3 py-1 rounded-full text-sm font-medium transition-all', currentFilter === 'eggs' ? 'bg-laboratory text-white' : 'bg-beige-cool text-text-dark hover:bg-laboratory/20']"
+                        >
+                            Incubating ({{ eggsCount }})
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Incubator Alert Section -->
+            <div v-if="eggAlerts.length > 0" class="mb-6">
+                <div v-for="alert in eggAlerts" :key="alert.id" 
+                     class="bg-gradient-to-r from-laboratory to-uranium text-white p-4 rounded-xl mb-2 notification-slide">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center critical-pulse">
+                                <i class="fas fa-egg text-lg"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold">🥚 MOVEMENT DETECTED!</h3>
+                                <p class="text-sm opacity-90">{{ alert.location }} - Possible hatching in progress</p>
+                            </div>
+                        </div>
+                        <button @click="assignCarePerson(alert)" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Assign Care Person
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Snake Management Table -->
+            <div class="bg-white rounded-xl border border-polonium overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-laboratory text-white">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">QR / ID</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Species & Location</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Environment</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Care Due</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-beige-cool">
+                            <tr v-for="snake in filteredSnakes" :key="snake.id" 
+                                class="table-row"
+                                :class="{'bg-critical/10': snake.status === 'critical', 'bg-warning/10': snake.needsAttention}">
+                                
+                                <!-- QR Code & ID -->
+                                <td class="px-4 py-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="qr-hover cursor-pointer w-10 h-10 bg-text-dark text-white rounded-lg flex items-center justify-center text-xs font-bold"
+                                             @click="showQR(snake)"
+                                             :title="'QR Code for ' + snake.id">
+                                            <i class="fas fa-qrcode"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-sm text-text-dark">{{ snake.id }}</div>
+                                            <div class="text-xs text-text-mid">{{ snake.region }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <!-- Species & Location -->
+                                <td class="px-4 py-4">
+                                    <div>
+                                        <div class="font-medium text-sm text-text-dark">{{ getSpeciesName(snake.id) }}</div>
+                                        <div class="text-xs text-text-mid italic">{{ getScientificName(snake.id) }}</div>
+                                        <div class="text-xs text-text-mid mt-1">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>{{ snake.enclosure }}
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <!-- Status -->
+                                <td class="px-4 py-4">
+                                    <div class="space-y-1">
+                                        <span :class="getStatusBadgeClass(snake.status)" class="status-badge inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
+                                            <i :class="getStatusIcon(snake.status)" class="mr-1"></i>
+                                            {{ snake.status.toUpperCase() }}
+                                        </span>
+                                        <div v-if="snake.alerts.length > 0" class="flex flex-wrap gap-1">
+                                            <span v-for="alert in snake.alerts" :key="alert" 
+                                                  class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-radium text-white">
+                                                {{ alert }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <!-- Environment -->
+                                <td class="px-4 py-4">
+                                    <div class="space-y-1 text-xs">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-thermometer-half text-radium"></i>
+                                            <span :class="isInRange(snake.temp, snake.tempRange) ? 'text-success' : 'text-critical font-bold'">
+                                                {{ snake.temp }}°C
+                                            </span>
+                                            <span class="text-text-light">({{ snake.tempRange.min }}-{{ snake.tempRange.max }})</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-tint text-uranium"></i>
+                                            <span :class="isInRange(snake.humidity, snake.humidityRange) ? 'text-success' : 'text-critical font-bold'">
+                                                {{ snake.humidity }}%
+                                            </span>
+                                            <span class="text-text-light">({{ snake.humidityRange.min }}-{{ snake.humidityRange.max }})</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <!-- Care Due -->
+                                <td class="px-4 py-4">
+                                    <div class="space-y-1 text-xs">
+                                        <div v-if="snake.feedingDue" class="flex items-center space-x-1 text-warning">
+                                            <i class="fas fa-utensils"></i>
+                                            <span>{{ snake.feedingDue }}</span>
+                                        </div>
+                                        <div v-if="snake.medicalDue" class="flex items-center space-x-1 text-uranium">
+                                            <i class="fas fa-pills"></i>
+                                            <span>{{ snake.medicalDue }}</span>
+                                        </div>
+                                        <div v-if="snake.cleaningDue" class="flex items-center space-x-1 text-laboratory">
+                                            <i class="fas fa-broom"></i>
+                                            <span>{{ snake.cleaningDue }}</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <!-- Actions -->
+                                <td class="px-4 py-4">
+                                    <div class="flex items-center space-x-2">
+                                        <button @click="markAsHandled(snake, 'feeding')" 
+                                                v-if="snake.feedingDue"
+                                                class="bg-warning/20 hover:bg-warning text-warning hover:text-white px-2 py-1 rounded text-xs transition-colors"
+                                                title="Mark feeding as complete">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button @click="markAsHandled(snake, 'medical')" 
+                                                v-if="snake.medicalDue"
+                                                class="bg-uranium/20 hover:bg-uranium text-uranium hover:text-white px-2 py-1 rounded text-xs transition-colors"
+                                                title="Mark medical care as complete">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button @click="assignCarePerson(snake)" 
+                                                class="bg-laboratory/20 hover:bg-laboratory text-laboratory hover:text-white px-2 py-1 rounded text-xs transition-colors"
+                                                title="Assign care person">
+                                            <i class="fas fa-user-plus"></i>
+                                        </button>
+                                        <button @click="viewDetails(snake)" 
+                                                class="bg-text-mid/20 hover:bg-text-mid text-text-mid hover:text-white px-2 py-1 rounded text-xs transition-colors"
+                                                title="View detailed profile">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Modal -->
+        <div v-if="showQRModal" class="fixed inset-0 bg-text-dark/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="closeQR">
+            <div class="bg-white rounded-xl p-6 max-w-sm w-full" @click.stop>
+                <div class="text-center">
+                    <h3 class="text-lg font-bold text-text-dark mb-4">{{ selectedSnakeForQR?.id }} QR Code</h3>
+                    <div class="w-48 h-48 bg-text-dark mx-auto mb-4 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-qrcode text-white text-6xl"></i>
+                    </div>
+                    <p class="text-sm text-text-mid mb-4">Scan to view detailed profile and care history</p>
+                    <button @click="closeQR" class="bg-laboratory text-white px-4 py-2 rounded-lg hover:bg-laboratory/80 transition-colors">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Care Assignment Modal -->
+        <div v-if="showAssignModal" class="fixed inset-0 bg-text-dark/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" @click="closeAssign">
+            <div class="bg-white rounded-xl p-6 max-w-md w-full" @click.stop>
+                <h3 class="text-lg font-bold text-text-dark mb-4">Assign Care Person</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark mb-2">Care Person</label>
+                        <select v-model="assignmentData.carePerson" class="w-full p-2 border border-polonium rounded-lg">
+                            <option value="">Select care person...</option>
+                            <option value="lisa">Lisa (Head Keeper)</option>
+                            <option value="raj">Raj (Assistant Keeper)</option>
+                            <option value="priya">Priya (Veterinarian)</option>
+                            <option value="amit">Amit (Research Assistant)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark mb-2">Task Type</label>
+                        <select v-model="assignmentData.taskType" class="w-full p-2 border border-polonium rounded-lg">
+                            <option value="feeding">Feeding</option>
+                            <option value="medical">Medical Care</option>
+                            <option value="cleaning">Cleaning</option>
+                            <option value="monitoring">Monitoring</option>
+                            <option value="emergency">Emergency Response</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark mb-2">Priority</label>
+                        <select v-model="assignmentData.priority" class="w-full p-2 border border-polonium rounded-lg">
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-text-dark mb-2">Notes</label>
+                        <textarea v-model="assignmentData.notes" class="w-full p-2 border border-polonium rounded-lg" rows="3" placeholder="Additional instructions or observations..."></textarea>
+                    </div>
+                </div>
+                <div class="flex space-x-3 mt-6">
+                    <button @click="submitAssignment" class="flex-1 bg-laboratory text-white py-2 px-4 rounded-lg hover:bg-laboratory/80 transition-colors">
+                        Assign & Notify
+                    </button>
+                    <button @click="closeAssign" class="px-4 py-2 border border-polonium rounded-lg hover:bg-beige-cool transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Toast -->
+        <div v-if="notification" class="fixed top-4 right-4 z-50 notification-slide">
+            <div :class="['p-4 rounded-lg shadow-lg text-white', notification.type === 'success' ? 'bg-success' : notification.type === 'warning' ? 'bg-warning' : 'bg-critical']">
+                <div class="flex items-center space-x-2">
+                    <i :class="notification.type === 'success' ? 'fas fa-check-circle' : notification.type === 'warning' ? 'fas fa-exclamation-triangle' : 'fas fa-exclamation-circle'"></i>
+                    <span class="font-medium">{{ notification.message }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    currentTime: '',
+                    currentDate: '',
+                    searchQuery: '',
+                    currentFilter: 'all',
+                    showQRModal: false,
+                    showAssignModal: false,
+                    selectedSnakeForQR: null,
+                    selectedSnakeForAssign: null,
+                    notification: null,
+                    assignmentData: {
+                        carePerson: '',
+                        taskType: 'feeding',
+                        priority: 'medium',
+                        notes: ''
+                    },
+                    
+                    // Sample data based on provided images
+                    snakes: [
+                        {
+                            id: 'CrMlKa01',
+                            region: 'Karnataka',
+                            enclosure: 'Terr-A1',
+                            status: 'critical',
+                            temp: 19.2,
+                            humidity: 45,
+                            tempRange: { min: 22, max: 28 },
+                            humidityRange: { min: 60, max: 80 },
+                            alerts: ['Low Temp', 'Low Humidity'],
+                            feedingDue: 'Today',
+                            medicalDue: 'Deworming Due',
+                            cleaningDue: null,
+                            needsAttention: true
+                        },
+                        {
+                            id: 'DaRuKa01',
+                            region: 'Karnataka',
+                            enclosure: 'Terr-B3',
+                            status: 'healthy',
+                            temp: 26.5,
+                            humidity: 72,
+                            tempRange: { min: 24, max: 30 },
+                            humidityRange: { min: 60, max: 80 },
+                            alerts: [],
+                            feedingDue: null,
+                            medicalDue: null,
+                            cleaningDue: 'Tomorrow',
+                            needsAttention: false
+                        },
+                        {
+                            id: 'EcCaKa01',
+                            region: 'Karnataka',
+                            enclosure: 'Terr-C2',
+                            status: 'attention',
+                            temp: 25.8,
+                            humidity: 85,
+                            tempRange: { min: 24, max: 28 },
+                            humidityRange: { min: 70, max: 85 },
+                            alerts: ['High Humidity'],
+                            feedingDue: 'Today',
+                            medicalDue: null,
+                            cleaningDue: null,
+                            needsAttention: true
+                        },
+                        {
+                            id: 'HyHyKa01',
+                            region: 'Karnataka',
+                            enclosure: 'Arb-D1',
+                            status: 'healthy',
+                            temp: 24.2,
+                            humidity: 78,
+                            tempRange: { min: 22, max: 26 },
+                            humidityRange: { min: 75, max: 90 },
+                            alerts: [],
+                            feedingDue: null,
+                            medicalDue: 'Betadine Soak',
+                            cleaningDue: null,
+                            needsAttention: false
+                        },
+                        {
+                            id: 'OpKaKa01',
+                            region: 'Karnataka',
+                            enclosure: 'Terr-A5',
+                            status: 'healthy',
+                            temp: 27.1,
+                            humidity: 68,
+                            tempRange: { min: 26, max: 30 },
+                            humidityRange: { min: 60, max: 80 },
+                            alerts: [],
+                            feedingDue: '2 days',
+                            medicalDue: null,
+                            cleaningDue: null,
+                            needsAttention: false
+                        },
+                        {
+                            id: 'BuCaKa01',
+                            region: 'Karnataka',
+                            enclosure: 'Terr-F1',
+                            status: 'attention',
+                            temp: 23.5,
+                            humidity: 55,
+                            tempRange: { min: 22, max: 28 },
+                            humidityRange: { min: 60, max: 80 },
+                            alerts: ['Low Humidity'],
+                            feedingDue: 'Today',
+                            medicalDue: null,
+                            cleaningDue: 'Today',
+                            needsAttention: true
+                        }
+                    ],
+                    
+                    eggAlerts: [
+                        {
+                            id: 'inc_01',
+                            location: 'Incubator Bay 1 - Tray 3',
+                            detected: new Date(),
+                            priority: 'high'
+                        }
+                    ],
+                    
+                    speciesMap: {
+                        'Cr': { common: 'Common Krait', scientific: 'Bungarus caeruleus' },
+                        'Da': { common: "Russell's Viper", scientific: 'Daboia russelii' },
+                        'Ec': { common: 'Spectacled Cobra', scientific: 'Naja naja' },
+                        'Hy': { common: 'Forsten\'s Cat Snake', scientific: 'Boiga forsteni' },
+                        'Op': { common: 'King Cobra', scientific: 'Ophiophagus hannah' },
+                        'Bu': { common: 'Common Krait', scientific: 'Bungarus caeruleus' }
+                    }
+                }
+            },
+            
+            computed: {
+                filteredSnakes() {
+                    let filtered = this.snakes;
+                    
+                    // Apply search filter
+                    if (this.searchQuery) {
+                        const query = this.searchQuery.toLowerCase();
+                        filtered = filtered.filter(snake => 
+                            snake.id.toLowerCase().includes(query) ||
+                            this.getSpeciesName(snake.id).toLowerCase().includes(query) ||
+                            this.getScientificName(snake.id).toLowerCase().includes(query)
+                        );
+                    }
+                    
+                    // Apply status filter
+                    switch (this.currentFilter) {
+                        case 'critical':
+                            filtered = filtered.filter(snake => snake.status === 'critical');
+                            break;
+                        case 'feeding':
+                            filtered = filtered.filter(snake => snake.feedingDue && snake.feedingDue === 'Today');
+                            break;
+                        case 'medical':
+                            filtered = filtered.filter(snake => snake.medicalDue);
+                            break;
+                        case 'eggs':
+                            // This would filter for incubating eggs
+                            filtered = [];
+                            break;
+                    }
+                    
+                    // Sort by priority - critical first
+                    return filtered.sort((a, b) => {
+                        if (a.status === 'critical' && b.status !== 'critical') return -1;
+                        if (b.status === 'critical' && a.status !== 'critical') return 1;
+                        if (a.needsAttention && !b.needsAttention) return -1;
+                        if (b.needsAttention && !a.needsAttention) return 1;
+                        return 0;
+                    });
+                },
+                
+                criticalCount() {
+                    return this.snakes.filter(snake => snake.status === 'critical').length;
+                },
+                
+                needsAttentionCount() {
+                    return this.snakes.filter(snake => snake.needsAttention && snake.status !== 'critical').length;
+                },
+                
+                healthyCount() {
+                    return this.snakes.filter(snake => snake.status === 'healthy').length;
+                },
+                
+                feedingDueCount() {
+                    return this.snakes.filter(snake => snake.feedingDue === 'Today').length;
+                },
+                
+                medicalDueCount() {
+                    return this.snakes.filter(snake => snake.medicalDue).length;
+                },
+                
+                eggsCount() {
+                    return this.eggAlerts.length;
+                }
+            },
+            
+            methods: {
+                updateTime() {
+                    const now = new Date();
+                    this.currentTime = now.toLocaleTimeString('en-IN', { 
+                        timeZone: 'Asia/Kolkata',
+                        hour12: false,
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+                    this.currentDate = now.toLocaleDateString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                },
+                
+                setFilter(filter) {
+                    this.currentFilter = filter;
+                },
+                
+                getSpeciesName(id) {
+                    const prefix = id.substring(0, 2);
+                    return this.speciesMap[prefix]?.common || 'Unknown Species';
+                },
+                
+                getScientificName(id) {
+                    const prefix = id.substring(0, 2);
+                    return this.speciesMap[prefix]?.scientific || 'Species unknown';
+                },
+                
+                getStatusBadgeClass(status) {
+                    switch (status) {
+                        case 'critical':
+                            return 'bg-critical text-white';
+                        case 'attention':
+                            return 'bg-warning text-white';
+                        case 'healthy':
+                            return 'bg-success text-white';
+                        default:
+                            return 'bg-text-light text-white';
+                    }
+                },
+                
+                getStatusIcon(status) {
+                    switch (status) {
+                        case 'critical':
+                            return 'fas fa-exclamation-triangle';
+                        case 'attention':
+                            return 'fas fa-exclamation-circle';
+                        case 'healthy':
+                            return 'fas fa-check-circle';
+                        default:
+                            return 'fas fa-question-circle';
+                    }
+                },
+                
+                isInRange(value, range) {
+                    return value >= range.min && value <= range.max;
+                },
+                
+                showQR(snake) {
+                    this.selectedSnakeForQR = snake;
+                    this.showQRModal = true;
+                },
+                
+                closeQR() {
+                    this.showQRModal = false;
+                    this.selectedSnakeForQR = null;
+                },
+                
+                assignCarePerson(item) {
+                    this.selectedSnakeForAssign = item;
+                    this.showAssignModal = true;
+                },
+                
+                closeAssign() {
+                    this.showAssignModal = false;
+                    this.selectedSnakeForAssign = null;
+                    this.assignmentData = {
+                        carePerson: '',
+                        taskType: 'feeding',
+                        priority: 'medium',
+                        notes: ''
+                    };
+                },
+                
+                submitAssignment() {
+                    // Here you would make an API call to assign the task
+                    this.showNotification('success', `Task assigned to ${this.assignmentData.carePerson} - notification sent!`);
+                    this.closeAssign();
+                },
+                
+                markAsHandled(snake, taskType) {
+                    // Mark the task as complete
+                    if (taskType === 'feeding') {
+                        snake.feedingDue = null;
+                    } else if (taskType === 'medical') {
+                        snake.medicalDue = null;
+                    }
+                    
+                    // Update status if all tasks are complete
+                    if (!snake.feedingDue && !snake.medicalDue) {
+                        snake.needsAttention = false;
+                        if (snake.status === 'attention') {
+                            snake.status = 'healthy';
+                        }
+                    }
+                    
+                    this.showNotification('success', `${taskType} marked as complete for ${snake.id}`);
+                },
+                
+                viewDetails(snake) {
+                    // This would open a detailed view modal
+                    this.showNotification('info', `Opening detailed view for ${snake.id}`);
+                },
+                
+                showNotification(type, message) {
+                    this.notification = { type, message };
+                    setTimeout(() => {
+                        this.notification = null;
+                    }, 3000);
+                }
+            },
+            
+            mounted() {
+                this.updateTime();
+                setInterval(this.updateTime, 1000);
+                
+                // Simulate real-time data updates
+                setInterval(() => {
+                    this.snakes.forEach(snake => {
+                        // Small random variations in environmental data
+                        snake.temp += (Math.random() - 0.5) * 0.2;
+                        snake.humidity += (Math.random() - 0.5) * 2;
+                        
+                        // Keep within bounds
+                        snake.temp = Math.max(15, Math.min(35, snake.temp));
+                        snake.humidity = Math.max(20, Math.min(100, snake.humidity));
+                        
+                        // Round values
+                        snake.temp = Math.round(snake.temp * 10) / 10;
+                        snake.humidity = Math.round(snake.humidity);
+                    });
+                }, 5000);
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

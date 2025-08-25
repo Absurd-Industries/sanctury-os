@@ -1,0 +1,27 @@
+Component,Category,Quantity,Unit_Price_INR,Total_Price_INR,Supplier,Supplier_Location,Delivery_Time,Link,Notes
+ESP32 Development Board (38-pin),Core Electronics,3,449,1347,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/products/esp32-development-board,WiFi + Bluetooth dual-core
+BME280 Environmental Sensor,Core Electronics,3,299,897,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/products/bme280-temperature-sensor-module,±0.5°C accuracy temp/humidity/pressure
+BH1750 Light Sensor,Core Electronics,3,129,387,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/products/bh1750-light-sensor,16-bit resolution 1-65535 lux
+HC-SR501 PIR Motion Sensor,Core Electronics,3,79,237,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/products/hcsr501-pir-motion-sensor-passive-infrared-sensor,Passive infrared 3-7m range
+ESP32-CAM with OV2640,Camera System,3,210,630,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/products/esp32-camera-module,2MP camera with WiFi streaming
+Samsung 18650 2600mAh Battery,Power System,3,317,951,Robu.in,Pan-India,2-3 Days,https://robu.in/product/samsung-icr18650-26-jm-2600mah-li-ion-battery/,High-drain lithium-ion cell
+TP4056 USB-C Charging Module,Power System,3,169,507,Robu.in,Pan-India,2-3 Days,https://robu.in/product/tp4056-1a-li-ion-lithium-battery-charging-module-with-current-protection-type-c/,1A charging with protection
+18650 Battery Holder (SMD),Power System,3,95,285,Robu.in,Pan-India,2-3 Days,https://robu.in/product/18650-battery-holder-smd-smt/,Surface mount design
+3.3V Buck/Boost Converter,Power System,3,51,153,Robu.in,Pan-India,2-3 Days,https://robu.in/product/dc-dc-1-8v-5v-to-3-3v-boost-and-buck-power-module/,Voltage regulation 1.8V-5V input
+JST XH Connectors (Mixed Pack),Assembly Hardware,10,18,180,Robu.in,Pan-India,2-3 Days,https://robu.in/product/4-pin-jst-xh-2-54mm-pitch-plug-and-socket-with-cable-5-pcs/,2/3/4-pin with cables
+Conformal Coating (250ml),Protection,1,450,450,Robu.in,Pan-India,2-3 Days,https://robu.in/product/conformal-coating/,Acrylic PCB protection
+Cable Glands & Assembly Parts,Assembly Hardware,1,300,300,Robu.in,Pan-India,2-3 Days,https://robu.in/,Mixed components bulk order
+IP65 Waterproof Enclosure,Housing,3,400,1200,Amazon India,Bengaluru,1-2 Days,https://www.amazon.in/s?k=IP65+waterproof+enclosure,80x120x85mm ABS plastic
+PG7 Cable Glands,Housing,6,35,210,GM Modular,Jayanagar Bengaluru,Same Day,https://gmmodular.com/store-locator,Waterproof cable entry
+Assembly Materials,Assembly Hardware,1,420,420,Local Suppliers,Bengaluru,Same Day,Various,Wires sealant hardware
+10k Resistor Pack,Electronic Components,1,25,25,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/,Pull-up resistors for I2C
+4.7k Resistor Pack,Electronic Components,1,25,25,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/,Standard I2C pull-ups
+Status LEDs (Red/Green/Blue),Electronic Components,15,3,45,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/,Power and status indicators
+Silicone Wire (22AWG),Assembly Hardware,10,15,150,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/,Flexible high-temp wire
+Heat Shrink Tubing Kit,Assembly Hardware,1,80,80,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/,Various sizes assortment
+Dupont Jumper Wires,Assembly Hardware,1,120,120,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/,120-piece male/female set
+M3 Mounting Hardware Kit,Assembly Hardware,1,85,85,Robocraze,Kalyan Nagar Bengaluru,Same Day,https://robocraze.com/,Screws nuts washers
+PCB Standoffs (M3),Assembly Hardware,20,8,160,Robu.in,Pan-India,2-3 Days,https://robu.in/,Component mounting spacers
+Aquarium-Safe Silicone Sealant,Protection,2,120,240,Local Hardware Store,Bengaluru,Same Day,Local,Non-toxic weatherproofing
+Acrylic Sheet (Clear 2mm),Housing,1,200,200,Local Plastics Supplier,Bengaluru,Same Day,Local,Light sensor windows
+Antenna Extension Cable (SMA),Connectivity,3,45,135,Robu.in,Pan-India,2-3 Days,https://robu.in/,External WiFi antenna option
